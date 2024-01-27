@@ -14,5 +14,14 @@ CHIP DMux4Way {
     OUT a, b, c, d;
 
     PARTS:
-    //// Replace this comment with your code.
+    /* if sel second bit is NOT set, dmux between a and b with sel first bit */
+    DMux(in=in, sel=sel[0], a=dmuxA, b=dmuxB);
+    Not(in=sel[1], out=notSel1);
+    And(a=dmuxA, b=notSel1, out=a);
+    And(a=notSel1, b=dmuxB, out=b);
+
+    /* if sel second bit is set, dmux between c and d with sel first bit */
+    DMux(in=in, sel=sel[0], a=dmuxC, b=dmuxD);
+    And(a=dmuxC, b=sel[1], out=c);
+    And(a=sel[1], b=dmuxD, out=d);
 }

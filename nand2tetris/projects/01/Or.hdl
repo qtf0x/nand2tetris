@@ -11,5 +11,10 @@ CHIP Or {
     OUT out;
 
     PARTS:
-    //// Replace this comment with your code.
+    /* De Morgan's law (naive?) */
+    Not(in=a, out=notA);
+    Not(in=b, out=notB);
+    And(a=notA, b=notB, out=x);
+
+    Not(in=x, out=out);
 }

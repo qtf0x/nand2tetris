@@ -11,5 +11,14 @@ CHIP Xor {
     OUT out;
 
     PARTS:
-    //// Replace this comment with your code.
+    /* b is set, but not a */
+    Not(in=a, out=notA);
+    And(a=notA, b=b, out=x);
+
+    /* a is set, but not b */
+    Not(in=b, out=notB);
+    And(a=a, b=notB, out=y);
+
+    /* either of the above case = 1, else = 0 */
+    Or(a=x, b=y, out=out);
 }

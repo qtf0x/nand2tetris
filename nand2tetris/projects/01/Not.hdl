@@ -12,5 +12,6 @@ CHIP Not {
     OUT out;
 
     PARTS:
-    //// Replace this comment with your code.
+    /* bit can't be NAND with itself */
+    Nand (a=in, b=in, out=out);
 }

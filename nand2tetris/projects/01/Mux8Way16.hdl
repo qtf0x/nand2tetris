@@ -16,5 +16,10 @@ CHIP Mux8Way16 {
     OUT out[16];
 
     PARTS:
-    //// Replace this comment with your code.
+    /* mux the two sets of inputs using the first two bits */
+    Mux4Way16(a=a, b=b, c=c, d=d, sel=sel[0..1], out=abMuxCD);
+    Mux4Way16(a=e, b=f, c=g, d=h, sel=sel[0..1], out=efMuxGH);
+
+    /* mux between the choice made above using the third bit */
+    Mux16(a=abMuxCD, b=efMuxGH, sel=sel[2], out=out);
 }

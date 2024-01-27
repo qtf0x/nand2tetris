@@ -11,5 +11,13 @@ CHIP Mux {
     OUT out;
 
     PARTS:
-    //// Replace this comment with your code.
+    /* if sel set, clear a */
+    Not(in=sel, out=notSel);
+    And(a=a, b=notSel, out=x);
+
+    /* if sel NOT set, clear b */
+    And(a=sel, b=b, out=y);
+
+    /* pass through whichever was not cleared */
+    Or(a=x, b=y, out=out);
 }

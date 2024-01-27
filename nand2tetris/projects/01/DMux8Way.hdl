@@ -14,5 +14,18 @@ CHIP DMux8Way {
     OUT a, b, c, d, e, f, g, h;
 
     PARTS:
-    //// Replace this comment with your code.
+    /* if sel third bit NOT set, dmux between a, b, c, d with sel[0..1] */
+    DMux4Way(in=in, sel=sel[0..1], a=dmuxA, b=dmuxB, c=dmuxC, d=dmuxD);
+    Not(in=sel[2], out=notSel2);
+    And(a=dmuxA, b=notSel2, out=a);
+    And(a=notSel2, b=dmuxB, out=b);
+    And(a=dmuxC, b=notSel2, out=c);
+    And(a=notSel2, b=dmuxD, out=d);
+
+    /* if sel third bit is set, dmux between e, f, g, h with sel[0..1] */
+    DMux4Way(in=in, sel=sel[0..1], a=dmuxE, b=dmuxF, c=dmuxG, d=dmuxH);
+    And(a=dmuxE, b=sel[2], out=e);
+    And(a=sel[2], b=dmuxF, out=f);
+    And(a=dmuxG, b=sel[2], out=g);
+    And(a=sel[2], b=dmuxH, out=h);
 }
