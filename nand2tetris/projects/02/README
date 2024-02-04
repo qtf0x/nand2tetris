@@ -1,0 +1,11 @@
+1. Vincent Marias
+
+2. I read the relevant sections of the textbook for about an hour, spent maybe
+three on the actual project.
+
+3. When implementing the ALU, I finished everything except the one-bit outputs
+and got stuck. It seemed like there was no way to do it since I couldn't access
+individual bits from internal buses. But re-reading the HDL guide in the book's
+appendix, I realized I could split the output of a chip by individual pins. I
+was also reminded that there are CONSTANTS for zero and one (true and false),
+and I didn't need to be ANDing x and y with their own NOTs to zero them :D

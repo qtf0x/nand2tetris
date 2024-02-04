@@ -11,5 +11,15 @@ CHIP FullAdder {
         carry;   // Left bit of a + b + c
 
     PARTS:
-    //// Replace this comment with your code.
+    /* add the first two bits, redirect sum and carry */
+    HalfAdder(a=a, b=b, sum=sumAB, carry=carryAB);
+
+    /* add the third bit to sum of first two, this is sum output */
+    HalfAdder(a=sumAB, b=c, sum=sum, carry=carryABC);
+
+    /* there are two possible carries
+       if both 0, carry is 0
+       if both 1, overflow -> carry is 0
+       else, they sum to 1 */
+    Xor(a=carryAB, b=carryABC, out=carry);
 }

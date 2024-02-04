@@ -11,5 +11,10 @@ CHIP HalfAdder {
         carry;  // Left bit of a + b
 
     PARTS:
-    //// Replace this comment with your code.
+    /* if both inputs 0, sum is 0
+       if both inputs 1, overflow/carry -> sum is 0 */
+    Xor(a=a, b=b, out=sum);
+
+    /* carry only occurs when both inputs 1 */
+    And(a=a, b=b, out=carry);
 }

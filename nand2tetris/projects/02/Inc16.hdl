@@ -11,5 +11,28 @@ CHIP Inc16 {
     OUT out[16];
 
     PARTS:
-    //// Replace this comment with your code.
+    /* adding 1, first bit always just gets flipped */
+    Not(in=in[0], out=out[0]);
+
+    /* first bit is it's own carry */
+    HalfAdder(a=in[0], b=in[1], sum=out[1], carry=carry01);
+
+    /* chain carries for the rest of the bits */
+    HalfAdder(a=carry01, b=in[2], sum=out[2], carry=carry02);
+    HalfAdder(a=carry02, b=in[3], sum=out[3], carry=carry03);
+    HalfAdder(a=carry03, b=in[4], sum=out[4], carry=carry04);
+    HalfAdder(a=carry04, b=in[5], sum=out[5], carry=carry05);
+    HalfAdder(a=carry05, b=in[6], sum=out[6], carry=carry06);
+    HalfAdder(a=carry06, b=in[7], sum=out[7], carry=carry07);
+    HalfAdder(a=carry07, b=in[8], sum=out[8], carry=carry08);
+    HalfAdder(a=carry08, b=in[9], sum=out[9], carry=carry09);
+    HalfAdder(a=carry09, b=in[10], sum=out[10], carry=carry10);
+    HalfAdder(a=carry10, b=in[11], sum=out[11], carry=carry11);
+    HalfAdder(a=carry11, b=in[12], sum=out[12], carry=carry12);
+    HalfAdder(a=carry12, b=in[13], sum=out[13], carry=carry13);
+    HalfAdder(a=carry13, b=in[14], sum=out[14], carry=carry14);
+
+    /* sice we're ignoring overflow anyway,
+       we just need the sum not the carry */
+    Xor(a=carry14, b=in[15], out=out[15]);
 }

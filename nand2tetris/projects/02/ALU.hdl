@@ -28,7 +28,7 @@
 
 CHIP ALU {
     IN  
-        x[16], y[16],  // 16-bit inputs        
+        x[16], y[16],  // 16-bit inputs
         zx, // zero the x input?
         nx, // negate the x input?
         zy, // zero the y input?
@@ -41,5 +41,34 @@ CHIP ALU {
         ng;      // if (out < 0)  equals 1, else 0
 
     PARTS:
-    //// Replace this comment with your code.
+    /* choose x or 0 */
+    Mux16(a=x, b=false, sel=zx, out=x1);
+
+    /* choose x or NOT x */
+    Not16(in=x1, out=notX1);
+    Mux16(a=x1, b=notX1, sel=nx, out=mutX);
+
+    /* choose y or 0 */
+    Mux16(a=y, b=false, sel=zy, out=y1);
+
+    /* choose y or NOT y */
+    Not16(in=y1, out=notY1);
+    Mux16(a=y1, b=notY1, sel=ny, out=mutY);
+
+    /* choose (x + y) or (x & y) */
+    And16(a=mutX, b=mutY, out=andXY);
+    Add16(a=mutX, b=mutY, out=addXY);
+    Mux16(a=andXY, b=addXY, sel=f, out=out1);
+
+    /* choose out or NOT out
+       also split output and check for negative */
+    Not16(in=out1, out=notOut1);
+    Mux16(a=out1, b=notOut1, sel=no, out=out, out[0..7]=outHalf1,
+    out[8..15]=outHalf2, out[15]=ng);
+
+    /* check if output is all zeros */
+    Or8Way(in=outHalf1, out=orHalf1);
+    Or8Way(in=outHalf2, out=orHalf2);
+    Or(a=orHalf1, b=orHalf2, out=orOut);
+    Not(in=orOut, out=zr);
 }
