@@ -13,5 +13,9 @@ CHIP Bit {
     OUT out;
 
     PARTS:
-    //// Replace this comment with your code.
+    /* choose to keep previous state or load new one from in */
+    Mux(a=state, b=in, sel=load, out=next);
+
+    /* flip-flop gets input from multiplexer, stores it as state */
+    DFF(in=next, out=state, out=out);
 }

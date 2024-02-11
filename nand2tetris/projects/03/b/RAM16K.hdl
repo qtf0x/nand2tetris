@@ -13,5 +13,15 @@ CHIP RAM16K {
     OUT out[16];
 
     PARTS:
-    //// Replace this comment with your code.
+    /* select which memory bank's load pin to send the load signal to */
+    DMux4Way(in=load, sel=address[12..13], a=loadA, b=loadB, c=loadC, d=loadD);
+
+    /* all banks wired input simultaneously, only one gets load signal */
+    RAM4K(in=in, load=loadA, address=address[0..11], out=ramA);
+    RAM4K(in=in, load=loadB, address=address[0..11], out=ramB);
+    RAM4K(in=in, load=loadC, address=address[0..11], out=ramC);
+    RAM4K(in=in, load=loadD, address=address[0..11], out=ramD);
+
+    /* select which bank's output signal to send to output pin */
+    Mux4Way16(a=ramA, b=ramB, c=ramC, d=ramD, sel=address[12..13], out=out);
 }

@@ -14,9 +14,29 @@
  * and de-assert the other two bits. 
  */
 CHIP PC {
-    IN in[16],inc, load, reset;
+    IN in[16], inc, load, reset;
     OUT out[16];
     
     PARTS:
-    //// Replace this comment with your code.
+    /* option precedence lowest-highest */
+
+    /* first select between 0 and the output of the incrementer */
+    Mux16(a=false, b=incOut, sel=inc, out=incOn);
+
+    /* then between the above output and the chip input */
+    Mux16(a=incOn, b=in, sel=load, out=loadOn);
+
+    /* finally between the above output and 0 (reset) */
+    Mux16(a=loadOn, b=false, sel=reset, out=resetOn);
+
+    /* incrementer is always going, but output might not be selected */
+    Inc16(in=incIn, out=incOut);
+
+    /* only set load pin on register if there's something to load,
+       else we just want to output register state */
+    Or(a=load, b=inc, out=xor1);
+    Or(a=xor1, b=reset, out=pinSet);
+
+    /* feed output to incrementer in case that gets selected AND to chip out */
+    Register(in=resetOn, load=pinSet, out=incIn, out=out);
 }

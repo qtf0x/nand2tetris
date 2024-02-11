@@ -1,0 +1,14 @@
+1. Vincent Marias
+
+2. I read the relevant sections of the textbook for about an hour, spent maybe
+two or three on the actual project.
+
+3. I thought it was interesting that the PC was the most difficult chip to
+design, conceptually, even though it's job is quite simple. I also feel like
+the book's requirement that there be a precedence to the operations (reset
+supercedes load if both are set, etc.) was not clear and is not how I would
+design the chip. Since it only makes sense to set one of the control pins at a
+time, why not just XOR them and send that to the registers load pin? Then, if
+multiple control pins are set, which isn't really supposed to happen, we assume
+something went wrong and don't touch the register's state. This feels safer and
+more intuitive to me.
