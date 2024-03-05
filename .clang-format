@@ -1,0 +1,6 @@
+# formatting option for C, C++
+---
+Language: Cpp
+IndentWidth: 4
+ColumnLimit: 80
+PointerAlignment: Left
