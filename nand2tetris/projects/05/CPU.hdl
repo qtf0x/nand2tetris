@@ -4,19 +4,20 @@
 // File name: projects/05/CPU.hdl
 /**
  * The Hack Central Processing unit (CPU).
- * Parses the binary code in the instruction input and executes it according to the
- * Hack machine language specification. In the case of a C-instruction, computes the
- * function specified by the instruction. If the instruction specifies to read a memory
- * value, the inM input is expected to contain this value. If the instruction specifies
- * to write a value to the memory, sets the outM output to this value, sets the addressM
- * output to the target address, and asserts the writeM output (when writeM == 0, any
- * value may appear in outM).
- * If the reset input is 0, computes the address of the next instruction and sets the
- * pc output to that value. If the reset input is 1, sets pc to 0.
- * Note: The outM and writeM outputs are combinational: they are affected by the
- * instruction's execution during the current cycle. The addressM and pc outputs are
- * clocked: although they are affected by the instruction's execution, they commit to
- * their new values only in the next cycle.
+ * Parses the binary code in the instruction input and executes it according to
+ * the Hack machine language specification. In the case of a C-instruction,
+ * computes the function specified by the instruction. If the instruction
+ * specifies to read a memory value, the inM input is expected to contain this
+ * value. If the instruction specifies to write a value to the memory, sets the
+ * outM output to this value, sets the addressM output to the target address,
+ * and asserts the writeM output (when writeM == 0, any value may appear in
+ * outM).
+ * If the reset input is 0, computes the address of the next instruction and
+ * sets the pc output to that value. If the reset input is 1, sets pc to 0.
+ * Note: The outM and writeM outputs are combinational: they are affected by
+ * the instruction's execution during the current cycle. The addressM and pc
+ * outputs are clocked: although they are affected by the instruction's
+ * execution, they commit to their new values only in the next cycle.
  */
 CHIP CPU {
 
@@ -32,5 +33,49 @@ CHIP CPU {
         pc[15];          // Address of next instruction
 
     PARTS:
-    //// Replace this comment with your code.
+    /* for A-instruction, feed A with literal instruction, for C-instruction,
+    * feed A with output of last ALU operation */
+    Mux16(a=instruction, b=outALU, sel=instruction[15], out=feedA);
+
+    /* we load A for all A-instructions and any C-instruction with bit 5 set */
+    Not(in=instruction[15], out=notCType);
+    Or(a=instruction[5], b=notCType, out=loadA);
+    /* feeds CPU output to address the data memory */
+    ARegister(in=feedA, load=loadA, out=outA, out[0..14]=addressM);
+
+    /* ALU operates on either value in A or M based on bit 12 */
+    Mux16(a=outA, b=inM, sel=instruction[12], out=feedY);
+
+    /* if C-instruction, load D based on bit 4 */
+    And(a=instruction[4], b=instruction[15], out=loadD);
+    DRegister(in=outALU, load=loadD, out=outD);
+
+    /* ALU takes 6 control bits (in order) from instruction, feeds output back
+    * to muxer above, as well as CPU output to potentially write result into M
+    * */
+    ALU(x=outD, y=feedY, zx=instruction[11], nx=instruction[10],
+    zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6],
+    out=outALU, out=outM, zr=zr, ng=ng);
+
+    /* if C-instruction, pass through bit 3 to toggle writing data memory */
+    And(a=instruction[3], b=instruction[15], out=writeM);
+
+    /* decide whether to branch or not based on ALU outputs, jump bits */
+    Or(a=ng, b=zr, out=nonpos);
+    Not(in=nonpos, out=pos);
+    And(a=pos, b=instruction[0], out=jg);
+
+    And(a=zr, b=instruction[1], out=je);
+
+    And(a=ng, b=instruction[2], out=jl);
+
+    Or(a=jg, b=je, out=jge);
+    Or(a=jge, b=jl, out=jonc);
+
+    /* only jump on C-instructions, obv */
+    And(a=jonc, b=instruction[15], out=j);
+
+    /* always go to next instruction unless jump, feed CPU output to
+    * instruction memory */
+    PC(in=outA, load=j, inc=true, reset=reset, out[0..14]=pc);
 }

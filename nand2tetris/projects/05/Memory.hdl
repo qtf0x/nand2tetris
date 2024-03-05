@@ -3,21 +3,41 @@
 // by Nisan and Schocken, MIT Press.
 // File name: projects/05/Memory.hdl
 /** 
- * The Memory chip implements the complete address space of the Hack data memory,
- * including RAM, memory mapped screen, and memory mapped keyboard.
+ * The Memory chip implements the complete address space of the Hack data
+ * memory, including RAM, memory mapped screen, and memory mapped keyboard.
  * Outputs the value of the memory location specified by the address input.
- * If (load == 1), sets the memory location specified by the address input
- * to the value of the in input.
+ * If (load == 1), sets the memory location specified by the address input to
+ * the value of the in input.
  * Address space rules:
  * Only the upper 16K + 8K + 1 words of the memory are used.
- * Access to address 0 to 16383 (0x0000 to 0x3FFF) results in accessing the RAM;
- * Access to address 16384 to 24575 (0x4000 to 0x5FFF) results in accessing the Screen memory map;
- * Access to address 24576 (0x6000) results in accessing the Keyboard memory map.
+ * Access to address 0 to 16383 (0x0000 to 0x3FFF) results in accessing the
+ * RAM;
+ * Access to address 16384 to 24575 (0x4000 to 0x5FFF) results in accessing the
+ * Screen memory map;
+ * Access to address 24576 (0x6000) results in accessing the Keyboard memory
+ * map.
  */ 
 CHIP Memory {
     IN in[16], load, address[15];
     OUT out[16];
 
     PARTS:
-    //// Replace this comment with your code.
+    /* choose to send load signal to RAM, Screen, or neither (Keyboard doesn't
+    * take input), based on MSB of the address - RAM address space is only 14
+    * bits and Screen's is only 13 */
+    DMux(in=load, sel=address[14], a=loadRAM, b=loadOther);
+    /* if Keyboard addressed, don't send load to Screen */
+    Not(in=address[13], out=notKbd);
+    And(a=loadOther, b=notKbd, out=loadScreen);
+
+    /* pass demuxed load signals to RAM and Screen, set up internal pins for
+    * outputs */
+    RAM16K(in=in, load=loadRAM, address=address[0..13], out=outRAM);
+    Screen(in=in, load=loadScreen, address=address[0..12], out=outScreen);
+    Keyboard(out=outKbd);
+
+    /* select between Screen and Keyboard with second MSB, then select between
+    * either of those and RAM with MSB, possibly overriding first decision */
+    Mux16(a=outScreen, b=outKbd, sel=address[13], out=outOther);
+    Mux16(a=outRAM, b=outOther, sel=address[14], out=out);
 }

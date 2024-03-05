@@ -17,5 +17,15 @@ CHIP Computer {
     IN reset;
 
     PARTS:
-    //// Replace this comment with your code.
+    /* instruction memory, read-only */
+    ROM32K(address=pc, out=instruction);
+
+    /* central processing unit, fetches instructions from instruction memory
+    * and executes them, sometimes writing to and/or reading from data memory
+    * */
+    CPU(inM=out, instruction=instruction, reset=reset, outM=outM,
+    writeM=writeM, addressM=addressM, pc=pc);
+
+    /* data memory, read-write */
+    Memory(in=outM, load=writeM, address=addressM, out=out);
 }

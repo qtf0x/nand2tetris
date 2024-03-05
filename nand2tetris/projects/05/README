@@ -1,0 +1,11 @@
+1. Vincent Marias
+
+2. I read the relevant sections of the textbook for about an hour, spent maybe
+another two on the actual project.
+
+3. Well, this was super cool! I'm still kind of in shock at how simple the
+design for the CPU ended up being. I really wouldn't have expected to be able
+to do instruction decoding and execution with just half a dozen chips (and some
+basic ORs, ANDs, and NOTs, of course). Not to mention the *actual* Computer
+chip, which is literally 3 lines of HDL. Also, I definitely got my answer to
+how the jump instructions work, and it's literally just a boolean expression :)
