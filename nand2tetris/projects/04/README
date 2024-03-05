@@ -1,0 +1,11 @@
+1. Vincent Marias
+
+2. I read the relevant sections of the textbook for about an hour, spent maybe
+another on the actual project.
+
+3. I really like the barebones simplicity of this ISA. With real-world ones
+like RISC-V or (god forbid) x86, you end up having to learn a lot of
+instructions. It's impressive that the textbook authors were able to design the
+CPU to do everything it needs to with just two instructions. Though I do wonder
+how things like D;JLE work, since I would think you'd need multiple
+instructions for that. I guess I'll find out next chapter.
