@@ -1,54 +1,62 @@
+/**
+ * @file assembler.c
+ * @author Vincent Marias <vmarias@mines.edu>
+ * @date 03/05/2024
+ *
+ * @brief This file is part of the HackAssember program, an assembler for the
+ * Hack architecture, as described in "The Elements of Computing Systems", 2nd
+ * Ed. by Nisan and Schocken. This module handles file I/O, constructs the
+ * symbol table, passes instructions to the parser and later to the translator,
+ * and catenates the binary opcodes returned by the translator.
+ *
+ * @copyright Vincent Marias, 2024
+ */
+
 // standard library headers
 #define _POSIX_C_SOURCE 200809L
-#include <regex.h>
+#include <regex.h>  // for regmatch_t, size_t, regoff_t
 #include <stdint.h> // for uint16_t
-#include <stdio.h>  // for fprintf, stderr, fopen, size_t, getline
-#include <stdlib.h> // for EXIT_FAILURE, EXIT_SUCCESS
-#include <string.h> // for strncmp, memcpy
+#include <stdio.h>  // for NULL, fprintf, stderr, fopen, size_t, getline
+#include <stdlib.h> // for EXIT_FAILURE, calloc, free, EXIT_SUCCESS
+#include <string.h> // for strncmp, memcpy, strncpy, strlen, strcat
 
 // project-specific modules
 #include "parser.h"
 #include "sym_tbl.h"
 #include "translator.h"
 
+static const char* const OUT_EXT = ".hack";
+
 int main(int argc, char** argv) {
     if (argc != 2) {
-        fprintf(stderr, "[ERROR] Usage: .%s <path to file>.asm\n", argv[0]);
+        fprintf(stderr, "[ERROR] Usage: %s <path to file>.asm\n", argv[0]);
         return EXIT_FAILURE;
     }
 
-    /* parse input into [path][name][extension] */
-    /* validate file extension as .asm */
+    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     * FILE I/O
+     * parse input into [path][name][extension]
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
     regmatch_t* pmatch = NULL;
     size_t nsub = 0;
-    regoff_t off = 0, len = 0;
-
-    char* path_no_ext = NULL;
-    char* name = NULL;
-    char* ext = NULL;
+    // regoff_t off = 0, len = 0;
+    regoff_t path_no_ext_off = 0, path_no_ext_len = 0;
+    regoff_t name_off = 0, name_len = 0;
+    regoff_t ext_off = 0, ext_len = 0;
 
     if ((pmatch = match_regex(argv[1], "^(.*/)([^/\\]*)\\.(.*)$", &nsub))) {
         /* extract filepath without extension */
-        off = pmatch[1].rm_so;
-        len = pmatch[2].rm_eo - pmatch[1].rm_so;
-
-        path_no_ext = calloc(len + 1, sizeof(char));
-        strncpy(path_no_ext, argv[1] + off, len);
+        path_no_ext_off = pmatch[1].rm_so;
+        path_no_ext_len = pmatch[2].rm_eo - pmatch[1].rm_so;
 
         /* extract filename without extension */
-        off = pmatch[2].rm_so;
-        len = pmatch[3].rm_eo - pmatch[2].rm_so;
-
-        name = calloc(len + 1, sizeof(char));
-        strncpy(name, argv[1] + off, len);
+        name_off = pmatch[2].rm_so;
+        name_len = pmatch[3].rm_eo - pmatch[2].rm_so;
 
         /* extract file extension */
-        off = pmatch[3].rm_so;
-        len = pmatch[3].rm_eo - pmatch[3].rm_so;
-
-        ext = calloc(len + 1, sizeof(char));
-        strncpy(ext, argv[1] + off, len);
+        ext_off = pmatch[3].rm_so;
+        ext_len = pmatch[3].rm_eo - pmatch[3].rm_so;
 
         /* clean up after yourself, you slob */
         free(pmatch);
@@ -57,27 +65,21 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    if (strncmp(ext, "asm", len)) {
-        fprintf(
-            stderr,
-            "[ERROR] File extension \"%s\" invalid - use <path to file>.asm\n",
-            ext);
+    /* validate file extension as .asm */
+    if (strncmp(argv[1] + ext_off, "asm", ext_len)) {
+        fprintf(stderr,
+                "[ERROR] File extension \"%.*s\" invalid - use <path to "
+                "file>.asm\n",
+                ext_len, argv[1] + ext_off);
         return EXIT_FAILURE;
     }
 
-    char* filename_out = calloc(strlen(path_no_ext) + 7, sizeof(char));
-    strncpy(filename_out, path_no_ext, strlen(path_no_ext));
-    strcat(filename_out, ".hack");
-
-    free(path_no_ext);
-    path_no_ext = NULL;
-    free(ext);
-    ext = NULL;
-
-    /* process input stream line-by-line */
-    /* pass non-empty lines to the parser, get back instruction struct */
-    /* enqueue A- and C-instructions, use L-instructions to update symbol table
-     */
+    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     * PARSING
+     * process input stream line-by-line
+     * pass lines to the parser, get back instruction struct
+     * enqueue A- and C-instructions, use L-instructions to update symbol table
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
     sym_tbl* tbl = sym_tbl_alloc();
 
@@ -88,26 +90,28 @@ int main(int argc, char** argv) {
     instruction* first_instr = NULL;
     instruction* curr_instr = NULL;
 
-    FILE* fin = fopen(argv[1], "r");
     char* line = NULL;
+    FILE* fin = fopen(argv[1], "r");
+
+    if (!fin) {
+        fprintf(stderr, "[ERROR] Failed to open source file \"%s\"\n", argv[1]);
+        return EXIT_FAILURE;
+    }
+
     size_t glen = 0;
-
     for (uint16_t nline = 1; getline(&line, &glen, fin) != -1; ++nline) {
-        /* don't bother giving parser empty lines */
-        if (glen == 1) {
-            continue;
-        }
-
         instruction* instr = parse_instr(line, nline);
 
         if (!instr) {
             fprintf(stderr,
-                    "[ERROR] Syntax error at %s:%u for instruction\n\t%s\n",
-                    name, nline, line);
+                    "[ERROR] Syntax error at %.*s:%u for instruction\n\t%s\n",
+                    name_len, argv[1] + name_off, nline, line);
+            sym_tbl_free(tbl);
             return EXIT_FAILURE;
         }
 
         if (instr->type == L_INSTR) {
+            /* update symbol table */
             sym_tbl_insert(tbl, instr->symbol, pc);
         } else if (instr->type == A_INSTR || instr->type == C_INSTR) {
             if (!first_instr) {
@@ -120,46 +124,69 @@ int main(int argc, char** argv) {
             }
             curr_instr = instr;
 
-            ++pc;
+            ++pc; /* only count instructions that generate code */
         }
     }
 
-    free(line);
     fclose(fin);
+    free(line);
+    line = NULL;
 
-    /* iterate trough instruction queue */
-    /* pass instruction, symbol table to parser for symbol resolution */
-    /* pass resolved instruction fields to translator for binary translation
-     */
-    /* catenate binary fields together to form complete binary instruction
-     */
-    /* write out binary instruction */
-
-    FILE* fout = fopen(filename_out, "w");
-    free(filename_out);
-    filename_out = NULL;
+    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     * TRANSLATION
+     * iterate trough instruction queue
+     * pass instruction, symbol table to parser for symbol resolution
+     * pass resolved instruction fields to translator for binary translation
+     * catenate binary fields together to form complete binary instruction
+     * write out binary instruction
+     * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
     uint16_t nvars = 16; /* used to count variables in program */
 
+    /* output filepath is same as input w/ extension changed to .hack */
+    char* filename_out =
+        calloc(path_no_ext_len + strlen(OUT_EXT), sizeof(char));
+    strncpy(filename_out, argv[1] + path_no_ext_off, path_no_ext_len);
+    strcat(filename_out, OUT_EXT);
+
+    FILE* fout = fopen(filename_out, "w");
+
+    if (!fout) {
+        fprintf(stderr, "[ERROR] Failed to open otuput file \"%s\"\n",
+                filename_out);
+        return EXIT_FAILURE;
+    }
+
+    free(filename_out);
+    filename_out = NULL;
+
     for (instruction* instr = first_instr; instr; instr = instr->next) {
+        /* if symbol needs to be resolved, attempt to resolve to an address */
         if ((instr->type == A_INSTR || instr->type == L_INSTR) &&
             !instr->resolved && !resolve_reference(instr, tbl, &nvars)) {
             fprintf(stderr,
-                    "[ERROR] Failed to resolve reference \"%s\" at %s:%u\n",
-                    instr->symbol, name, instr->line_number);
+                    "[ERROR] Failed to resolve reference \"%s\" at %.*s:%u\n",
+                    instr->symbol, name_len, argv[1] + name_off,
+                    instr->line_number);
+            fclose(fout);
+            sym_tbl_free(tbl);
             return EXIT_FAILURE;
         }
 
+        /* the actual "bits" in the translated instruction */
         char instr_bits[16] = {'0'};
 
         if (instr->type == A_INSTR) {
+            /* A-instructions just need a decimal->binary value translation */
             translate_val(instr->addr, instr_bits);
         } else if (instr->type == C_INSTR) {
+            /* all C-instructions start with 111, then catenate other fields */
             memcpy(instr_bits, "111", 3);
             memcpy(instr_bits + 3, translate_comp(instr->comp), 7);
             memcpy(instr_bits + 10, translate_dest(instr->dest), 3);
             memcpy(instr_bits + 13, translate_jump(instr->jump), 3);
         } else {
+            /* L-instructions and comments/blank lines don't generate code */
             continue;
         }
 
@@ -167,7 +194,6 @@ int main(int argc, char** argv) {
         fwrite("\n", sizeof(char), 1, fout);
     }
 
-    free(name);
     fclose(fout);
     sym_tbl_free(tbl);
 

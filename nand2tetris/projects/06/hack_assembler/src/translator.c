@@ -1,3 +1,18 @@
+/**
+ * @file sym_tbl.c
+ * @author Vincent Marias <vmarias@mines.edu>
+ * @date 03/05/2024
+ *
+ * @brief This file is part of the HackAssember program, an assembler for the
+ * Hack architecture, as described in "The Elements of Computing Systems", 2nd
+ * Ed. by Nisan and Schocken. This module handles translating instruction
+ * op-codes and value fields to their binary equivalents in the form of
+ * character strings of the ASCII characters '0' and '1'.
+ *
+ * @copyright Vincent Marias, 2024
+ */
+
+#define _POSIX_C_SOURCE 200809L
 #include <stddef.h> // for NULL
 #include <string.h> // for strlen, size_t
 
