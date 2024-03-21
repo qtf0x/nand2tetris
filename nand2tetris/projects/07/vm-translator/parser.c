@@ -36,7 +36,7 @@ struct parser* parser_alloc(const char* const fname) { /* TODO */
 void parser_free(struct parser* const psr) { /* TODO */
 }
 
-bool parser_more_lines(const struct parser* const psr) { /* TODO */
+bool parser_has_lines(const struct parser* const psr) { /* TODO */
     return false;
 }
 
@@ -47,8 +47,9 @@ enum cmd_t parser_command_type(const struct parser* const psr) { /* TODO */
     return 0;
 }
 
-const char* parser_arg1(const struct parser* const psr) { /* TODO */
-    return NULL;
+union arg_t parser_arg1(const struct parser* const psr) { /* TODO */
+    union arg_t arg = {.operation = O_ADD};
+    return arg;
 }
 
 int16_t parser_arg2(const struct parser* const psr) { /* TODO */

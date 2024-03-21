@@ -39,6 +39,24 @@ enum cmd_t {
     C_CALL
 };
 
+enum op_t { O_ADD, O_SUB, O_NEG, O_EQ, O_GT, O_LT, O_AND, O_OR, O_NOT };
+
+enum seg_t {
+    S_ARGUMENT,
+    S_LOCAL,
+    S_STATIC,
+    S_CONSTANT,
+    S_THIS,
+    S_THAT,
+    S_POINTER,
+    S_TEMP
+};
+
+union arg_t {
+    enum op_t operation;
+    enum seg_t segment;
+};
+
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> */
 /* (Public) Subroutine Declarations */
 /* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
@@ -71,10 +89,10 @@ void parser_free(struct parser* const psr);
  * @param[in] psr pointer to a Parser to query
  * @return true if there more lines to parse, else false
  */
-bool parser_more_lines(const struct parser* const psr);
+bool parser_has_lines(const struct parser* const psr);
 
 /**
- * @desc Reads the next command from the input and makes it the currect command.
+ * @desc Reads the next command from the input and makes it the current command.
  *
  * @param[in,out] psr pointer to a Parser to advance
  *
@@ -98,16 +116,13 @@ enum cmd_t parser_command_type(const struct parser* const psr);
  * @desc Queries the first argument of the current command.
  *
  * @param[in] psr pointer to a Parser to query
- * @return a string representing the first argument of the current command
+ * @return union representing either the operation to be performed, for
+ * arithmetic-logical-type commands, or the memory segment to operate on, for
+ * push/pop commands
  *
- * @note In the case of C_ARITHMETIC, the command itself ("add", "sub", etc.) is
- * returned.
  * @note Should not be called if the current command is C_RETURN.
- * @note No guarantees are made about the lifetime of the returned memory after
- * subsequent calls to Parser routines. If the information is needed after such
- * calls, the caller should first make a copy.
  */
-const char* parser_arg1(const struct parser* const psr);
+union arg_t parser_arg1(const struct parser* const psr);
 
 /**
  * @desc Queries the second argument of the current command.

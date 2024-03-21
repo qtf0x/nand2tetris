@@ -14,10 +14,11 @@
 
 /* standard library headers */
 #define _POSIX_C_SOURCE 200809L
-#include <stdint.h> /* for int16_t */
+#include <stdbool.h> /* for bool */
+#include <stdint.h>  /* for int16_t */
 
 /* project-specific modules */
-#include "parser.h" /* for cmd_t */
+#include "parser.h"
 
 /* >>>>>>>>>>>>>>>>>>> */
 /* Types and Constants */
@@ -57,9 +58,10 @@ void writer_free(struct writer* const wtr);
  * arithmetic-logical command.
  *
  * @param[out] wtr pointer to a Writer previously allocated using writer_alloc
- * @param[in] cmd the command to be translated
+ * @param[in] op the arithmetic-logical operation to effect
+ * @return true on success, false on error
  */
-void writer_put_al(struct writer* const wtr, const char* const cmd);
+bool writer_put_al(struct writer* const wtr, const enum op_t op);
 
 /**
  * @desc Writes to the output file the assembly code that implements the given
@@ -67,10 +69,11 @@ void writer_put_al(struct writer* const wtr, const char* const cmd);
  *
  * @param[out] wtr pointer to a Writer previously allocated using writer_alloc
  * @param[in] cmd_type either C_PUSH or C_POP
- * @param[in] segment the memory segment to operate on
+ * @param[in] seg the memory segment to operate on
  * @param[in] idx index into the given memory segment
+ * @return true on success, false on error
  */
-void writer_put_so(struct writer* const wtr, const enum cmd_t cmd_type,
-                   const char* const segment, const int16_t idx);
+bool writer_put_so(struct writer* const wtr, const enum cmd_t cmd_type,
+                   const enum seg_t seg, const int16_t idx);
 
 #endif /* VM_TRANSLATOR_WRITER_H */

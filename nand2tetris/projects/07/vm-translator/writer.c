@@ -36,9 +36,11 @@ struct writer* writer_alloc(const char* const fname) { /* TODO */
 void writer_free(struct writer* const wtr) { /* TODO */
 }
 
-void writer_put_al(struct writer* const wtr, const char* const cmd) { /* TODO */
+bool writer_put_al(struct writer* const wtr, const enum op_t op) { /* TODO */
+    return false;
 }
 
-void writer_put_so(struct writer* const wtr, const enum cmd_t cmd_type,
-                   const char* const segment, const int16_t idx) { /* TODO */
+bool writer_put_so(struct writer* const wtr, const enum cmd_t cmd_type,
+                   const enum seg_t seg, const int16_t idx) { /* TODO */
+    return false;
 }
