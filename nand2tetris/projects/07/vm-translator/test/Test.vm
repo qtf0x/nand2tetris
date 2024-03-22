@@ -1,0 +1,11 @@
+// this is a comment
+push argument 1
+pop local 2
+push static 3
+pop constant 4
+push this 5
+pop that 6
+                   
+push pointer 7
+pop temp 8
+

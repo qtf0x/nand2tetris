@@ -36,10 +36,22 @@ enum cmd_t {
     C_IF,
     C_FUNCTION,
     C_RETURN,
-    C_CALL
+    C_CALL,
+    C_ERROR
 };
 
-enum op_t { O_ADD, O_SUB, O_NEG, O_EQ, O_GT, O_LT, O_AND, O_OR, O_NOT };
+enum op_t {
+    O_ADD,
+    O_SUB,
+    O_NEG,
+    O_EQ,
+    O_GT,
+    O_LT,
+    O_AND,
+    O_OR,
+    O_NOT,
+    O_ERROR
+};
 
 enum seg_t {
     S_ARGUMENT,
@@ -49,7 +61,8 @@ enum seg_t {
     S_THIS,
     S_THAT,
     S_POINTER,
-    S_TEMP
+    S_TEMP,
+    S_ERROR
 };
 
 union arg_t {
