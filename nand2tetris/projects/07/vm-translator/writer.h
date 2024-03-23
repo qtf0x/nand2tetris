@@ -34,13 +34,13 @@ struct writer;
 /**
  * @desc Creates a new Writer by opening the given file.
  *
- * @param[in] fname path to the file to be opened
+ * @param[in] fpath path to the file to be opened
  * @return pointer to newly allocated Writer, or NULL on error
  *
- * @note The argument to fname can be a regular file or a stream.
+ * @note The argument to fpath can be a regular file or a stream.
  * @note The returned Writer should be freed with writer_free by the caller.
  */
-struct writer* writer_alloc(const char* const fname);
+struct writer* writer_alloc(const char* const fpath);
 
 /**
  * @desc Frees the memory associated with a Writer. Additionally closes the
