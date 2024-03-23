@@ -94,9 +94,9 @@ static void write_comparison(struct writer* const wtr, const enum op_t op) {
     char* label_2 = calloc(strlen(wtr->fname) + len + 5, sizeof(*label_1));
 
     sprintf(label_1_load, "@%s:%zu\n", wtr->fname, wtr->label_count);
-    sprintf(label_2_load, "@%s:%zu\n", wtr->fname, wtr->label_count);
-
     sprintf(label_1, "(%s:%zu)\n", wtr->fname, wtr->label_count++);
+
+    sprintf(label_2_load, "@%s:%zu\n", wtr->fname, wtr->label_count);
     sprintf(label_2, "(%s:%zu)\n", wtr->fname, wtr->label_count++);
 
     write_instructions(wtr, label_1_load);

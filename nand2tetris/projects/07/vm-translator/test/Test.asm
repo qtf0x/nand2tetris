@@ -9,7 +9,15 @@ M=M-1
 A=M
 D=M
 @R13
-D=D&M
+D=D-M
+@Test:0
+D;JLT
+D=0
+@Test:1
+0;JMP
+(Test:0)
+D=-1
+(Test:1)
 @SP
 M=M+1
 A=M-1
