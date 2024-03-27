@@ -35,38 +35,32 @@ struct writer {
 /* (Private) Subroutine Definitions */
 /* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
-static void write_instructions(struct writer* const wtr,
-                               const char* const instructions) {
-    fwrite(instructions, sizeof(*instructions), strlen(instructions),
-           wtr->fout);
-}
-
 static void pop_D(struct writer* const wtr) {
-    write_instructions(wtr, "@SP\nM=M-1\nA=M\nD=M\n");
+    fprintf(wtr->fout, "@SP\nM=M-1\nA=M\nD=M\n");
 }
 
 static void push_D(struct writer* const wtr) {
-    write_instructions(wtr, "@SP\nM=M+1\nA=M-1\nM=D\n");
+    fprintf(wtr->fout, "@SP\nM=M+1\nA=M-1\nM=D\n");
 }
 
 static void write_arithmetic(struct writer* const wtr, const enum op_t op) {
     pop_D(wtr);
-    write_instructions(wtr, "@R13\nM=D\n");
+    fprintf(wtr->fout, "@R13\nM=D\n");
     pop_D(wtr);
-    write_instructions(wtr, "@R13\n");
+    fprintf(wtr->fout, "@R13\n");
 
     switch (op) {
     case O_ADD:
-        write_instructions(wtr, "D=D+M\n");
+        fprintf(wtr->fout, "D=D+M\n");
         break;
     case O_SUB:
-        write_instructions(wtr, "D=D-M\n");
+        fprintf(wtr->fout, "D=D-M\n");
         break;
     case O_AND:
-        write_instructions(wtr, "D=D&M\n");
+        fprintf(wtr->fout, "D=D&M\n");
         break;
     case O_OR:
-        write_instructions(wtr, "D=D|M\n");
+        fprintf(wtr->fout, "D=D|M\n");
         break;
     default:
         fprintf(stderr,
@@ -79,9 +73,9 @@ static void write_arithmetic(struct writer* const wtr, const enum op_t op) {
 
 static void write_comparison(struct writer* const wtr, const enum op_t op) {
     pop_D(wtr);
-    write_instructions(wtr, "@R13\nM=D\n");
+    fprintf(wtr->fout, "@R13\nM=D\n");
     pop_D(wtr);
-    write_instructions(wtr, "@R13\nD=D-M\n");
+    fprintf(wtr->fout, "@R13\nD=D-M\n");
 
     /* stupid labels ugh kill meeeeeeee */
     const int len = snprintf(NULL, 0, "%zu", wtr->label_count + 1);
@@ -99,17 +93,17 @@ static void write_comparison(struct writer* const wtr, const enum op_t op) {
     sprintf(label_2_load, "@%s:%zu\n", wtr->fname, wtr->label_count);
     sprintf(label_2, "(%s:%zu)\n", wtr->fname, wtr->label_count++);
 
-    write_instructions(wtr, label_1_load);
+    fprintf(wtr->fout, "%s", label_1_load);
 
     switch (op) {
     case O_EQ:
-        write_instructions(wtr, "D;JEQ\n");
+        fprintf(wtr->fout, "D;JEQ\n");
         break;
     case O_LT:
-        write_instructions(wtr, "D;JLT\n");
+        fprintf(wtr->fout, "D;JLT\n");
         break;
     case O_GT:
-        write_instructions(wtr, "D;JGT\n");
+        fprintf(wtr->fout, "D;JGT\n");
         break;
     default:
         fprintf(stderr,
@@ -119,12 +113,12 @@ static void write_comparison(struct writer* const wtr, const enum op_t op) {
         return;
     }
 
-    write_instructions(wtr, "D=0\n");
-    write_instructions(wtr, label_2_load);
-    write_instructions(wtr, "0;JMP\n");
-    write_instructions(wtr, label_1);
-    write_instructions(wtr, "D=-1\n");
-    write_instructions(wtr, label_2);
+    fprintf(wtr->fout, "D=0\n");
+    fprintf(wtr->fout, "%s", label_2_load);
+    fprintf(wtr->fout, "0;JMP\n");
+    fprintf(wtr->fout, "%s", label_1);
+    fprintf(wtr->fout, "D=-1\n");
+    fprintf(wtr->fout, "%s", label_2);
 
     free(label_1);
     free(label_2);
@@ -137,15 +131,170 @@ static void write_unary(struct writer* const wtr, const enum op_t op) {
 
     switch (op) {
     case O_NEG:
-        write_instructions(wtr, "D=-D\n");
+        fprintf(wtr->fout, "D=-D\n");
         break;
     case O_NOT:
-        write_instructions(wtr, "D=!D\n");
+        fprintf(wtr->fout, "D=!D\n");
         break;
     default:
         fprintf(stderr,
                 "[WARNING] Calling %s with incompatible op-code, no operation "
                 "performed\n",
+                __func__);
+        return;
+    }
+}
+
+static void access_segment(struct writer* const wtr, const enum seg_t seg) {
+    switch (seg) {
+    case S_LOCAL:
+        fprintf(wtr->fout, "@LCL\n");
+        break;
+    case S_ARGUMENT:
+        fprintf(wtr->fout, "@ARG\n");
+        break;
+    case S_THIS:
+        fprintf(wtr->fout, "@THIS\n");
+        break;
+    case S_THAT:
+        fprintf(wtr->fout, "@THAT\n");
+        break;
+    case S_TEMP:
+        fprintf(wtr->fout, "@5\n");
+        break;
+    case S_CONSTANT:
+        /* we never literally access the purely virtual constant segment */
+        return;
+    default:
+        fprintf(stderr, "[ERROR] Calling %s with incompatible memory segment\n",
+                __func__);
+        return;
+    }
+}
+
+static void access_static(struct writer* const wtr, const int16_t idx) {
+    fprintf(wtr->fout, "@%s.%d\n", wtr->fname, idx);
+}
+
+static void push_pointer(struct writer* const wtr, const enum seg_t seg,
+                         const int16_t idx) {
+    switch (seg) {
+    case S_POINTER:
+        /* offset is 0 for pointer segment */
+        fprintf(wtr->fout, "@0\nD=A\n");
+
+        switch (idx) {
+        case 0:
+            access_segment(wtr, S_THIS);
+            break;
+        case 1:
+            access_segment(wtr, S_THAT);
+        }
+        break;
+    default:
+        fprintf(wtr->fout, "@%d\nD=A\n", idx);
+        access_segment(wtr, seg);
+    }
+
+    /* don't need any more instructions for constant segment */
+    if (seg == S_CONSTANT) {
+        return;
+    }
+
+    if (seg == S_TEMP || seg == S_POINTER) {
+        fprintf(wtr->fout, "A=D+A\n");
+    } else {
+        fprintf(wtr->fout, "A=D+M\n");
+    }
+
+    fprintf(wtr->fout, "D=M\n");
+}
+
+static void push_static(struct writer* const wtr, const int16_t idx) {
+    access_static(wtr, idx);
+
+    fprintf(wtr->fout, "D=M\n");
+}
+
+static void push(struct writer* const wtr, const enum seg_t seg,
+                 const int16_t idx) {
+    switch (seg) {
+    case S_LOCAL:
+    case S_ARGUMENT:
+    case S_THIS:
+    case S_THAT:
+    case S_TEMP:
+    case S_POINTER:
+    case S_CONSTANT:
+        push_pointer(wtr, seg, idx);
+        break;
+    case S_STATIC:
+        push_static(wtr, idx);
+        break;
+    default:
+        fprintf(stderr, "[WARNING] Calling %s with error-type memory segment\n",
+                __func__);
+        return;
+    }
+
+    push_D(wtr);
+}
+
+static void pop_pointer(struct writer* const wtr, const enum seg_t seg,
+                        const int16_t idx) {
+    fprintf(wtr->fout, "@R14\nM=D\n");
+
+    switch (seg) {
+    case S_POINTER:
+        /* offset is 0 for pointer segment */
+        fprintf(wtr->fout, "@0\nD=A\n");
+
+        switch (idx) {
+        case 0:
+            access_segment(wtr, S_THIS);
+            break;
+        case 1:
+            access_segment(wtr, S_THAT);
+        }
+        break;
+    default:
+        fprintf(wtr->fout, "@%d\nD=A\n", idx);
+        access_segment(wtr, seg);
+    }
+
+    if (seg == S_TEMP || seg == S_POINTER) {
+        fprintf(wtr->fout, "D=D+A\n");
+    } else {
+        fprintf(wtr->fout, "D=D+M\n");
+    }
+
+    fprintf(wtr->fout, "@R15\nM=D\n@R14\nD=M\n@R15\nA=M\nM=D\n");
+}
+
+static void pop_static(struct writer* const wtr, const int16_t idx) {
+    access_static(wtr, idx);
+
+    fprintf(wtr->fout, "M=D\n");
+}
+
+static void pop(struct writer* const wtr, const enum seg_t seg,
+                const int16_t idx) {
+    pop_D(wtr);
+
+    switch (seg) {
+    case S_LOCAL:
+    case S_ARGUMENT:
+    case S_THIS:
+    case S_THAT:
+    case S_TEMP:
+    case S_POINTER:
+        pop_pointer(wtr, seg, idx);
+        break;
+    case S_STATIC:
+        pop_static(wtr, idx);
+        break;
+    default:
+        fprintf(stderr, "[WARNING] Calling %s with error-type memory segment\n",
                 __func__);
         return;
     }
@@ -260,8 +409,39 @@ bool writer_put_al(struct writer* const wtr, const enum op_t op) {
 }
 
 bool writer_put_so(struct writer* const wtr, const enum cmd_t cmd_type,
-                   const enum seg_t seg, const int16_t idx) { /* TODO */
-    if (!wtr) {
+                   const enum seg_t seg, const int16_t idx) {
+    if (!wtr || !wtr->fout) {
+        fprintf(stderr,
+                "[WARNING] Calling %s with NULL argument(s), no operation "
+                "performed\n",
+                __func__);
+        return false;
+    }
+
+    /* make sure index is nonegative */
+    if (idx < 0) {
+        fprintf(stderr, "[ERROR] Stack operation with negative index\n");
+        return false;
+    }
+
+    if (cmd_type != C_PUSH && cmd_type != C_POP) {
+        fprintf(stderr, "[ERROR] Calling %s with command type that is not a "
+                        "stack operation\n");
+        return false;
+    }
+
+    switch (cmd_type) {
+    case C_PUSH:
+        push(wtr, seg, idx);
+        break;
+    case C_POP:
+        pop(wtr, seg, idx);
+        break;
+    default:
+        fprintf(stderr,
+                "[WARNING] Calling %s with incompatible command type, no "
+                "operation performed\n",
+                __func__);
         return false;
     }
 
