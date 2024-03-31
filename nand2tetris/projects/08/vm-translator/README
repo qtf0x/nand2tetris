@@ -1,0 +1,10 @@
+1. Vincent Marias
+
+2. I read the relevant sections of the textbook for about two hours, spent
+maybe another [INSERT TIME] on the actual project.
+
+3. 
+
+4. Building this program requires a C compiler to be available on the system
+path (aliased to `cc`) which supports the C17 and POSIX.1-2008 standards
+(tested on Linux with GCC 13.2.1 and Clang 17.0.6). No other dependencies.
