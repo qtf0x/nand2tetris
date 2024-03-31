@@ -349,7 +349,8 @@ struct writer* writer_alloc(const char* const fpath) {
     free(fpath_cpy);
 
     /* set default function name */
-    wtr->curr_func = wtr->fname;
+    wtr->curr_func = calloc(strlen(wtr->fname) + 1, sizeof(*wtr->curr_func));
+    strcpy(wtr->curr_func, wtr->fname);
 
     return wtr;
 }
@@ -482,6 +483,60 @@ bool writer_put_branch(struct writer* const wtr, const enum cmd_t cmd_type,
             wtr->fname, wtr->curr_func, label);
         return false;
     }
+
+    return true;
+}
+
+bool writer_put_func(struct writer* const wtr, const char* const label,
+                     const int16_t nvars) {
+    if (!wtr || !wtr->fout) {
+        fprintf(stderr,
+                "[WARNING] Calling %s with NULL argument(s), no operation "
+                "performed\n",
+                __func__);
+        return false;
+    }
+
+    /* inject function entry label into code */
+    fprintf(wtr->fout, "(%s)\n", label);
+
+    /* initialize local variables */
+    for (int16_t i = 0; i < nvars; ++i) {
+        push(wtr, S_CONSTANT, 0);
+    }
+
+    /* update current function for use in local label generation */
+    free(wtr->curr_func);
+    wtr->curr_func = calloc(strlen(label) + 1, sizeof(*wtr->curr_func));
+    strcpy(wtr->curr_func, label);
+
+    return true;
+}
+
+bool writer_put_return(struct writer* const wtr) {
+    if (!wtr || !wtr->fout) {
+        fprintf(stderr,
+                "[WARNING] Calling %s with NULL argument(s), no operation "
+                "performed\n",
+                __func__);
+        return false;
+    }
+
+    /* reposition the return value for the caller */
+    pop_D(wtr);
+    fprintf(wtr->fout, "@ARG\nA=M\nM=D\n");
+
+    /* reposition SP for the caller */
+    fprintf(wtr->fout, "@ARG\nD=M+1\n@SP\nM=D\n");
+
+    /* restore segment pointers from stack frame */
+    fprintf(wtr->fout, "@LCL\nD=M\n@R13\nM=D-1\nA=M\nD=M\n@THAT\nM=D\n");
+    fprintf(wtr->fout, "@R13\nM=M-1\nA=M\nD=M\n@THIS\nM=D\n");
+    fprintf(wtr->fout, "@R13\nM=M-1\nA=M\nD=M\n@ARG\nM=D\n");
+    fprintf(wtr->fout, "@R13\nM=M-1\nA=M\nD=M\n@LCL\nM=D\n");
+
+    /* go to the return address */
+    fprintf(wtr->fout, "@R13\nM=M-1\nA=M\nA=M\n0;JMP\n");
 
     return true;
 }

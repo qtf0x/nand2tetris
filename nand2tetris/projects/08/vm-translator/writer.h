@@ -88,4 +88,24 @@ bool writer_put_so(struct writer* const wtr, const enum cmd_t cmd_type,
 bool writer_put_branch(struct writer* const wtr, const enum cmd_t cmd_type,
                        const char* const label);
 
+/**
+ * @desc Writes assembly code that effects a function definition command
+ *
+ * @param[out] wtr pointer to a Writer previously allocated using writer_alloc
+ * @param[in] name a string representing the function name given in the VM code
+ * @param[in] nvars the number of local variables used by this function
+ * @return true on success, false on error
+ */
+bool writer_put_func(struct writer* const wtr, const char* const label,
+                     const int16_t nvars);
+
+/**
+ * @desc Writes assembly code that effects a function return of the most
+ * recently defined function.
+ *
+ * @param[out] wtr pointer to a Writer previously allocated using writer_alloc
+ * @return true on sucess, false on error
+ */
+bool writer_put_return(struct writer* const wtr);
+
 #endif /* VM_TRANSLATOR_WRITER_H */

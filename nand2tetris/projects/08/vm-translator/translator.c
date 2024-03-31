@@ -130,6 +130,21 @@ int main(int argc, char** argv) {
                 goto EXIT;
             }
             break;
+        case C_FUNCTION:
+            if (!writer_put_func(wtr, parser_arg1(psr).label,
+                                 parser_arg2(psr))) {
+                fprintf(stderr, "[ERROR] Could not write function command\n");
+                EXIT_STATUS = EXIT_FAILURE;
+                goto EXIT;
+            }
+            break;
+        case C_RETURN:
+            if (!writer_put_return(wtr)) {
+                fprintf(stderr, "[ERROR] Could not write return command\n");
+                EXIT_STATUS = EXIT_FAILURE;
+                goto EXIT;
+            }
+            break;
         default:
             fprintf(
                 stderr,
