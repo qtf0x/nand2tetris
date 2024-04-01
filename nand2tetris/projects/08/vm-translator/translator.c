@@ -20,10 +20,14 @@
 #include <stdio.h>  /* for fprintf, stderr */
 #include <stdlib.h> /* for EXIT_FAILURE, EXIT_SUCCESS, calloc, free */
 #include <string.h> /* for strrchr, strcmp, strlen, strcpy */
+#include <unistd.h> /* for get_current_dir_name */
 
 /* POSIX headers */
 #include <sys/stat.h>  /* for stat, S_ISDIR */
 #include <sys/types.h> /* for DIR */
+
+/* Linux headers */
+#include <linux/limits.h>
 
 /* project-specific modules */
 #include "parser.h"
@@ -79,35 +83,7 @@ int main(int argc, char** argv) {
     if (S_ISDIR(sb.st_mode)) { /* it's a directory */
         input_dir = true;
         dirfd = opendir(argv[1]);
-
-        /*char* slash_loc = NULL;
-        if ((slash_loc = strrchr(argv[1], '/'))) {
-            size_t prefix_len = slash_loc - argv[1] + 1;
-            rel_path_prefix = calloc(prefix_len + 1, sizeof(*rel_path_prefix));
-            strncpy(rel_path_prefix, argv[1], prefix_len);
-        } else {
-            rel_path_prefix = calloc(1, sizeof(*rel_path_prefix));
-        }*/
     }
-
-    /*
-    const char* const dot_loc = strrchr(argv[1], '.');
-    const char* ifname = strrchr(argv[1], '/');
-    if (!ifname) {
-        ifname = argv[1];
-    } else {
-        ++ifname;
-    }
-
-    if (!dot_loc || strcmp(dot_loc + 1, IN_EXT) || !isupper(ifname[0])) {
-        fprintf(stderr,
-                "[ERROR] File path \"%s\" invalid; filename must start with "
-                "uppercase letter and have extension \".%s\"\n",
-                argv[1], IN_EXT);
-        EXIT_STATUS = EXIT_FAILURE;
-        goto EXIT;
-    }
-    */
 
     /* --------------------------------------------- */
     /* Create Writer for Translation/Output Services */
@@ -116,18 +92,25 @@ int main(int argc, char** argv) {
     char* ofname = NULL;
 
     if (input_dir) {
+        char dirname[PATH_MAX + 1] = {0};
 
-        char* ifname = strrchr(argv[1], '/');
+        if (!strcmp(argv[1], ".") || !strcmp(argv[1], "..")) {
+            getcwd(dirname, PATH_MAX);
+        } else {
+            strcpy(dirname, argv[1]);
+        }
+
+        char* ifname = strrchr(dirname, '/');
 
         if (ifname) {
             ++ifname;
         } else {
-            ifname = argv[1];
+            ifname = dirname;
         }
 
-        ofname = calloc(strlen(argv[1]) + strlen(ifname) + strlen(OUT_EXT) + 3,
+        ofname = calloc(strlen(dirname) + strlen(ifname) + strlen(OUT_EXT) + 3,
                         sizeof(*ofname));
-        strcpy(ofname, argv[1]);
+        strcpy(ofname, dirname);
 
         strcat(ofname, "/");
         strcat(ofname, ifname);
