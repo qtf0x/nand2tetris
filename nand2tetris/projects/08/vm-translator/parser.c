@@ -275,7 +275,7 @@ static void free_cmd(struct command cmd) {
         cmd.command == C_IF || cmd.command == C_FUNCTION ||
         cmd.command == C_CALL) {
         free(cmd.arg1.label);
-        cmd.arg1.label = NULL;
+        // cmd.arg1.label = NULL;
     }
 }
 
@@ -330,7 +330,12 @@ void parser_free(struct parser* const psr) {
     psr->has_lines = false;
 
     free_cmd(psr->curr_cmd);
+    if (psr->curr_cmd.arg1.label == psr->next_cmd.arg1.label) {
+        psr->next_cmd.arg1.label = NULL;
+    }
+    psr->curr_cmd.arg1.label = NULL;
     free_cmd(psr->next_cmd);
+    psr->next_cmd.arg1.label = NULL;
 
     free(psr);
 }

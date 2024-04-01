@@ -54,6 +54,15 @@ struct writer* writer_alloc(const char* const fpath);
 void writer_free(struct writer* const wtr);
 
 /**
+ * @desc Sets the name of the file currently being parsed. Used for labels
+ * within the in generated code.
+ *
+ * @param[out] wtr pointer to a Writer previously allocated using writer_alloc
+ * @param[in] fpath the name of the file being parsed
+ */
+void writer_set_fname(struct writer* const wtr, const char* const fpath);
+
+/**
  * @desc Writes to the output file the assembly code that implements the given
  * arithmetic-logical command.
  *
@@ -107,5 +116,17 @@ bool writer_put_func(struct writer* const wtr, const char* const label,
  * @return true on sucess, false on error
  */
 bool writer_put_return(struct writer* const wtr);
+
+/**
+ * @desc Writes assembly code that effects a function call command.
+ *
+ * @param[out] wtr pointer to a Writer previously allocated using writer_alloc
+ * @param[in] name a string representing the function name given in the VM code
+ * @param[in] nargs the number of arguments pushed onto the stack before the
+ * call
+ * @return true on success, false on error
+ */
+bool writer_put_call(struct writer* const wtr, const char* const label,
+                     const int16_t nargs);
 
 #endif /* VM_TRANSLATOR_WRITER_H */

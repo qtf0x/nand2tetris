@@ -32,6 +32,8 @@ struct writer {
     size_t label_count;
 };
 
+static const char* const default_func = "GLOBAL";
+
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> */
 /* (Private) Subroutine Definitions */
 /* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
@@ -329,28 +331,18 @@ struct writer* writer_alloc(const char* const fpath) {
 
     wtr->fout = fout;
     wtr->label_count = 0;
-
-    /* extract filename from path */
-    char* fpath_cpy = calloc(strlen(fpath) + 1, sizeof(*fpath_cpy));
-    strcpy(fpath_cpy, fpath);
-
-    char* fname = strrchr(fpath_cpy, '/');
-    if (!fname) {
-        fname = fpath_cpy;
-    } else {
-        ++fname;
-    }
-
-    fname = strtok(fname, ".");
-
-    wtr->fname = calloc(strlen(fname) + 1, sizeof(*wtr->fname));
-    strcpy(wtr->fname, fname);
-
-    free(fpath_cpy);
+    wtr->fname = NULL;
 
     /* set default function name */
-    wtr->curr_func = calloc(strlen(wtr->fname) + 1, sizeof(*wtr->curr_func));
-    strcpy(wtr->curr_func, wtr->fname);
+    wtr->curr_func = calloc(strlen(default_func) + 1, sizeof(*wtr->curr_func));
+    strcpy(wtr->curr_func, default_func);
+
+    /* -------------- */
+    /* Bootstrap Code */
+    /* -------------- */
+
+    fprintf(wtr->fout, "@256\nD=A\n@SP\nM=D\n");
+    writer_put_call(wtr, "Sys.init", 0);
 
     return wtr;
 }
@@ -370,6 +362,30 @@ void writer_free(struct writer* const wtr) {
     wtr->fname = NULL;
 
     free(wtr);
+}
+
+void writer_set_fname(struct writer* const wtr, const char* const fpath) {
+    /* extract filename from path */
+    char* fpath_cpy = calloc(strlen(fpath) + 1, sizeof(*fpath_cpy));
+    strcpy(fpath_cpy, fpath);
+
+    char* fname = strrchr(fpath_cpy, '/');
+    if (!fname) {
+        fname = fpath_cpy;
+    } else {
+        ++fname;
+    }
+
+    fname = strtok(fname, ".");
+
+    wtr->fname = calloc(strlen(fname) + 1, sizeof(*wtr->fname));
+    strcpy(wtr->fname, fname);
+
+    free(fpath_cpy);
+
+    /* global code shouldn't really happen, but here you go */
+    wtr->curr_func = calloc(strlen(default_func) + 1, sizeof(*wtr->curr_func));
+    strcpy(wtr->curr_func, default_func);
 }
 
 bool writer_put_al(struct writer* const wtr, const enum op_t op) {
@@ -537,6 +553,52 @@ bool writer_put_return(struct writer* const wtr) {
 
     /* go to the return address */
     fprintf(wtr->fout, "@R13\nM=M-1\nA=M\nA=M\n0;JMP\n");
+
+    return true;
+}
+
+bool writer_put_call(struct writer* const wtr, const char* const label,
+                     const int16_t nargs) {
+    if (!wtr || !wtr->fout) {
+        fprintf(stderr,
+                "[WARNING] Calling %s with NULL argument(s), no operation "
+                "performed\n",
+                __func__);
+        return false;
+    }
+
+    int16_t nargs_cpy = nargs;
+
+    /* deal with 0-argument functions (they always return something, we need to
+     * avoid overwriting the return address) */
+    if (nargs_cpy == 0 && strcmp(label, "Sys.init")) {
+        writer_put_so(wtr, C_PUSH, S_CONSTANT, 0);
+        nargs_cpy = 1;
+    }
+
+    /* generate a label and push it to the stack */
+    fprintf(wtr->fout, "@%s$ret.%zu\nD=A\n", wtr->curr_func, wtr->label_count);
+    push_D(wtr);
+
+    /* save memory segment base pointers to stack frame */
+    fprintf(wtr->fout, "@LCL\nD=M\n");
+    push_D(wtr);
+    fprintf(wtr->fout, "@ARG\nD=M\n");
+    push_D(wtr);
+    fprintf(wtr->fout, "@THIS\nD=M\n");
+    push_D(wtr);
+    fprintf(wtr->fout, "@THAT\nD=M\n");
+    push_D(wtr);
+
+    /* reposition ARG and LCL */
+    fprintf(wtr->fout, "@%d\nD=A\n@SP\nD=M-D\n@ARG\nM=D\n", 5 + nargs_cpy);
+    fprintf(wtr->fout, "@SP\nD=M\n@LCL\nM=D\n");
+
+    /* transfer control to the callee */
+    fprintf(wtr->fout, "@%s\n0;JMP\n", label);
+
+    /* inject the return address label into the code */
+    fprintf(wtr->fout, "(%s$ret.%zu)\n", wtr->curr_func, wtr->label_count++);
 
     return true;
 }

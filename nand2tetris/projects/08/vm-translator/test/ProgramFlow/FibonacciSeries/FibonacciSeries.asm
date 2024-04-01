@@ -118,7 +118,7 @@ D=M
 @R15
 A=M
 M=D
-(FibonacciSeries$LOOP)
+(GLOBAL$LOOP)
 @0
 D=A
 @ARG
@@ -132,11 +132,11 @@ M=D
 M=M-1
 A=M
 D=M
-@FibonacciSeries$COMPUTE_ELEMENT
+@GLOBAL$COMPUTE_ELEMENT
 D;JNE
-@FibonacciSeries$END
+@GLOBAL$END
 0;JMP
-(FibonacciSeries$COMPUTE_ELEMENT)
+(GLOBAL$COMPUTE_ELEMENT)
 @0
 D=A
 @THAT
@@ -284,6 +284,6 @@ D=M
 @R15
 A=M
 M=D
-@FibonacciSeries$LOOP
+@GLOBAL$LOOP
 0;JMP
-(FibonacciSeries$END)
+(GLOBAL$END)

@@ -21,7 +21,7 @@ D=M
 @R15
 A=M
 M=D
-(BasicLoop$LOOP)
+(GLOBAL$LOOP)
 @0
 D=A
 @ARG
@@ -134,7 +134,7 @@ M=D
 M=M-1
 A=M
 D=M
-@BasicLoop$LOOP
+@GLOBAL$LOOP
 D;JNE
 @0
 D=A
