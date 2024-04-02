@@ -361,6 +361,9 @@ void writer_free(struct writer* const wtr) {
     free(wtr->fname);
     wtr->fname = NULL;
 
+    free(wtr->curr_func);
+    wtr->curr_func = NULL;
+
     free(wtr);
 }
 
@@ -378,12 +381,14 @@ void writer_set_fname(struct writer* const wtr, const char* const fpath) {
 
     fname = strtok(fname, ".");
 
+    free(wtr->fname);
     wtr->fname = calloc(strlen(fname) + 1, sizeof(*wtr->fname));
     strcpy(wtr->fname, fname);
 
     free(fpath_cpy);
 
     /* global code shouldn't really happen, but here you go */
+    free(wtr->curr_func);
     wtr->curr_func = calloc(strlen(default_func) + 1, sizeof(*wtr->curr_func));
     strcpy(wtr->curr_func, default_func);
 }

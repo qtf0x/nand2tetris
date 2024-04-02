@@ -15,13 +15,13 @@ INCLUDE_DIR = include
 SRC_FILES = translator.c parser.c writer.c
 
 CC = cc
-CCFLAGS =  -Og -I$(INCLUDE_DIR)
+CCFLAGS =  -O2 -I$(INCLUDE_DIR)
 CVERSION = -std=c17
 # CCFLAGS_SANITIZER = -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fsanitize=leak -fsanitize=undefined
-CCFLAGS_DEBUG = -g
+# CCFLAGS_DEBUG = -g
 # CCFLAGS_WARNINGS = -Wall -Wextra -Wconversion -Wdouble-promotion -Wunreachable-code -Wshadow -Wpedantic -pedantic-errors
 
-export ASAN_OPTIONS=detect_invalid_pointer_pairs=2
+# export ASAN_OPTIONS=detect_invalid_pointer_pairs=2
 
 OBJECTS = $(SRC_FILES:.c=.o)
 

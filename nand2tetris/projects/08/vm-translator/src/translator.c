@@ -14,20 +14,22 @@
 
 /* standard library headers */
 #define _POSIX_C_SOURCE 200809L
+#define _GNU_SOURCE
 #include <ctype.h>  /* for isupper */
-#include <dirent.h> /* for opendir, readdir */
+#include <dirent.h> /* for opendir, readdir closedir */
+#include <limits.h>
 #include <stddef.h> /* for NULL */
 #include <stdio.h>  /* for fprintf, stderr */
 #include <stdlib.h> /* for EXIT_FAILURE, EXIT_SUCCESS, calloc, free */
 #include <string.h> /* for strrchr, strcmp, strlen, strcpy */
-#include <unistd.h> /* for get_current_dir_name */
+#include <unistd.h> /* for getcwd */
 
 /* POSIX headers */
 #include <sys/stat.h>  /* for stat, S_ISDIR */
 #include <sys/types.h> /* for DIR */
 
 /* Linux headers */
-#include <linux/limits.h>
+#include <linux/limits.h> /* for PATH_MAX */
 
 /* project-specific modules */
 #include "parser.h"
@@ -94,10 +96,12 @@ int main(int argc, char** argv) {
     if (input_dir) {
         char dirname[PATH_MAX + 1] = {0};
 
-        if (!strcmp(argv[1], ".") || !strcmp(argv[1], "..")) {
-            getcwd(dirname, PATH_MAX);
-        } else {
-            strcpy(dirname, argv[1]);
+        /* in case it's . or .. or whatever */
+        realpath(argv[1], dirname);
+
+        /* could have trailing /, or not */
+        if (*(dirname + strlen(dirname) - 1) == '/') {
+            dirname[strlen(dirname) - 1] = '\0';
         }
 
         char* ifname = strrchr(dirname, '/');
@@ -249,6 +253,12 @@ int main(int argc, char** argv) {
 EXIT:
     writer_free(wtr);
     parser_free(psr);
+
+    free(rel_path_prefix);
+    if (input_dir) {
+        free(next_file_name);
+        closedir(dirfd);
+    }
 
     return EXIT_STATUS;
 }

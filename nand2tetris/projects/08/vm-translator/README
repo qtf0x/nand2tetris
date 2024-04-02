@@ -1,9 +1,10 @@
 1. Vincent Marias
 
-2. I read the relevant sections of the textbook for about two hours, spent
-maybe another [INSERT TIME] on the actual project.
+2. Way longer than I really should have, but that's mostly because testinng and
+debugging with the CPU emulator is an absolute nightmare.
 
-3. 
+3. If I had the time, I would go through an extensive refactoring process, but
+that's always how I feel looking back at a project in hindsight.
 
 4. Building this program requires a C compiler to be available on the system
 path (aliased to `cc`) which supports the C17 and POSIX.1-2008 standards
