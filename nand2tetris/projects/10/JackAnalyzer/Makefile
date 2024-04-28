@@ -11,13 +11,14 @@
 
 LEX_GEN = flex
 LEX_FILES = jack.l
-LEX_OPTS =
-LEXER = lex.yy.cpp
+LEX_OPTS = --8bit --noyywrap --bison-bridge --fast --nodefault --warn
+LEXER = scanner.cpp
 
 PARSE_GEN = bison
-PARSE_FILE = jack.y
-PARSE_OPTS =
-PARSER =
+PARSE_FILES = jack.y
+PARSE_OPTS = -d -t
+PARSER = parser.cpp
+PARSER_HEADER = parser.h
 
 TARGET = JackAnalyzer
 VPATH = src
@@ -41,13 +42,16 @@ all: $(TARGET)
 $(TARGET): $(OBJECTS)
 	$(CC) -o  $@ $(CCFLAGS_SANITIZER) $(LINKER_OPTS) $^
 
-.cpp.o:
-	$(CC) $(CCFLAGS) $(CVERSION) $(CCFLAGS_SANITIZER) $(CCFLAGS_DEBUG) $(CCFLAGS_WARNINGS) -o $@ -c $<
-
 $(LEXER): $(LEX_FILES)
 	$(LEX_GEN) -o $(LEXER) $(LEX_OPTS) $(LEX_FILES)
 
+$(PARSER): $(PARSE_FILES)
+	$(PARSE_GEN) -o $(PARSER) --header=$(PARSER_HEADER) $(PARSE_OPTS) $(PARSE_FILES)
+
+.cpp.o:
+	$(CC) $(CCFLAGS) $(CVERSION) $(CCFLAGS_SANITIZER) $(CCFLAGS_DEBUG) $(CCFLAGS_WARNINGS) -o $@ -c $<
+
 clean:
-	rm -f $(TARGET) $(OBJECTS) $(LEXER)
+	rm -f $(TARGET) $(OBJECTS) $(LEXER) $(PARSER)
 
 .PHONY: all clean depend
