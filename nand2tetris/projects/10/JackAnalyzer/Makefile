@@ -11,12 +11,12 @@
 
 LEX_GEN = flex
 LEX_FILES = jack.l
-LEX_OPTS = --8bit --noyywrap --bison-bridge --fast --nodefault --warn
+LEX_OPTS = --8bit --noyywrap --nodefault --warn
 LEXER = scanner.cpp
 
 PARSE_GEN = bison
 PARSE_FILES = jack.y
-PARSE_OPTS = -d -t
+PARSE_OPTS = -d -v
 PARSER = parser.cpp
 PARSER_HEADER = parser.h
 
@@ -28,7 +28,7 @@ SRC_FILES = $(LEXER) $(PARSER)
 CC = clang++
 CCFLAGS =  -Og -I$(INCLUDE_DIR)
 CCFLAGS_DEBUG = -g
-CCFLAGS_WARNINGS = -Wall -Wextra -Wconversion -Wdouble-promotion -Wunreachable-code -Wshadow -Wpedantic -pedantic-errors
+# CCFLAGS_WARNINGS = -Wall -Wextra -Wconversion -Wdouble-promotion -Wunreachable-code -Wshadow -Wpedantic -pedantic-errors
 # CCFLAGS_SANITIZER = -fsanitize=address -fsanitize=pointer-compare -fsanitize=pointer-subtract -fsanitize=leak -fsanitize=undefined
 CVERSION = -std=c++17
 LINKER_OPTS = -lfl
@@ -42,16 +42,14 @@ all: $(TARGET)
 $(TARGET): $(OBJECTS)
 	$(CC) -o  $@ $(CCFLAGS_SANITIZER) $(LINKER_OPTS) $^
 
-$(LEXER): $(LEX_FILES)
-	$(LEX_GEN) -o $(LEXER) $(LEX_OPTS) $(LEX_FILES)
-
-$(PARSER): $(PARSE_FILES)
-	$(PARSE_GEN) -o $(PARSER) --header=$(PARSER_HEADER) $(PARSE_OPTS) $(PARSE_FILES)
-
 .cpp.o:
 	$(CC) $(CCFLAGS) $(CVERSION) $(CCFLAGS_SANITIZER) $(CCFLAGS_DEBUG) $(CCFLAGS_WARNINGS) -o $@ -c $<
 
+$(LEXER): $(LEX_FILES)
+	$(PARSE_GEN) -o $(PARSER) --header=$(PARSER_HEADER) $(PARSE_OPTS) $(PARSE_FILES)
+	$(LEX_GEN) -o $(LEXER) $(LEX_OPTS) $(LEX_FILES)
+
 clean:
-	rm -f $(TARGET) $(OBJECTS) $(LEXER) $(PARSER)
+	rm -f $(TARGET) $(OBJECTS) $(LEXER) $(PARSER) $(PARSER_HEADER) parser.output
 
 .PHONY: all clean depend
