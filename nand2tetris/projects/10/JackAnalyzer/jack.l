@@ -5,6 +5,8 @@
 %{
 extern "C" int yylex();
 extern "C" int yyerror(const char*);
+extern "C" void lexrestart(FILE*);
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <string>
@@ -117,3 +119,9 @@ this        { yylval.strVal = strdup(yytext); return TOK_THIS; }    /* object re
 %}
 
 .   yyerror(strdup((std::string("lexical error: ") + std::string(yytext)).c_str()));
+
+%%
+
+void lexrestart(FILE* f) {
+    yyin = f;
+}

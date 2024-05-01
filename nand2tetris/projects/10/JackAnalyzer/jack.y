@@ -8,9 +8,14 @@
     #include <memory>
     #include <string>
     #include <string.h>
+    #include <filesystem>
 
     extern "C" int yylex();
     extern "C" int yyerror(const char*);
+    extern "C" void lexrestart(FILE*);
+
+    extern "C" void parseFile(std::filesystem::path);
+
     extern "C" void xmlKeyword (char*);
     extern "C" void xmlSymbol (char*);
     extern "C" void xmlInteger (int16_t);
@@ -329,11 +334,41 @@ tok_ident:      TOK_IDENT   { xmlIdent($1); }
 %%
 
 int main(int argc, char** argv) {
-    //out.reset(&std::cout);
+    std::filesystem::path argPath{argv[1]};
 
-    yyparse();
+    if (std::filesystem::is_directory(argPath)) {
+        for (const auto& entry : std::filesystem::directory_iterator(argPath)) {
+            if (entry.path().extension() == ".jack") {
+                parseFile(entry);
+            }
+        }
+    } else {
+        parseFile(argPath);
+    }
 
     return EXIT_SUCCESS;
+}
+
+void parseFile(std::filesystem::path inPath) {
+    const char* s = inPath.c_str();
+    std::filesystem::path outExt{".xml"};
+
+    /* set input stream */
+    std::cout << "Opening " << s << " for input...\n";
+    FILE* inFile = fopen(s, "r");
+    lexrestart(inFile);
+
+    /* set output stream */
+    std::filesystem::path outPath = inPath;
+    outPath.replace_extension(outExt);
+    std::cout << "Opening " << outPath << " for output...\n";
+    out.reset(new std::ofstream(outPath));
+
+    /* do the parse */
+    std::cout << "Parsing...\n\n";
+    yyparse();
+
+    fclose(inFile);
 }
 
 int yyerror(const char* s) {

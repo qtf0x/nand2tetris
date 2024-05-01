@@ -1,0 +1,18 @@
+1. Vincent Marias
+
+2. Maybe ~5 hours total (textbook reading and coding).
+
+3. I used the Flex and Bison scanner and parser generators for this project,
+instead of hand-coding a recursive descent parser like the book suggested. I've
+already done that plenty in Compiler Design, at least enough to know that using
+generators would be a much easier approach. I really think that, if they
+expected us to do recursive descent, they should have put in the extra effort
+to make the Jack grammar LL(1). As it is, I had to modify the grammar quite a
+bit, and even then I just told Bison to generate a GLR parser in order to deal
+with the reduce/reduce conflicts. Someone taking this course who has no idea
+about grammars or language theory could get very lost doing this project, I
+think (not that it's all that difficult, but the grammar is just weird and the
+specification for it is lazy).
+
+4. This project depends on recent versions of clang(1), flex(1), and bison(1).
+Build on Linux using make(1).
