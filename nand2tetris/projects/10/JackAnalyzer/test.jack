@@ -1,3 +1,0 @@
-while (count < 100) {
-    let count = count + 1;
-}

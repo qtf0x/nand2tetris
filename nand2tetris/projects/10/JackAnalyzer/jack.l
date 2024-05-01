@@ -9,9 +9,12 @@ extern "C" int yyerror(const char*);
 #include <stdlib.h>
 #include <string>
 #include <stdio.h>
+#include <iostream>
 
 #include "parser.h"
 %}
+
+%x C_COMMENT
 
 %%
 
@@ -23,9 +26,13 @@ extern "C" int yyerror(const char*);
 /* whitespace and comments */
 %}
 
-[ \n]           {} /* gobble whitespace */
-"//".*$         {} /* gobble line-end comments */
-"/*"(?s:.)*"*/" {} /* gobble multi-line comments */
+[ \t\n\r]           {} /* gobble whitespace */
+"//"[^\n]*(\r)?\n   {} /* gobble line-end comments */
+
+"/*"            { BEGIN(C_COMMENT); } /* gobble C-style comments */
+<C_COMMENT>"*/" { BEGIN(INITIAL); }
+<C_COMMENT>\n   { }
+<C_COMMENT>.    { }
 
 %{
 /* symbols */
@@ -109,4 +116,4 @@ this        { yylval.strVal = strdup(yytext); return TOK_THIS; }    /* object re
 /* anything else is a lexical error */
 %}
 
-.   yyerror("lexical error");
+.   yyerror(strdup((std::string("lexical error: ") + std::string(yytext)).c_str()));

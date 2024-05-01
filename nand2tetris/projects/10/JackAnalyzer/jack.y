@@ -35,7 +35,7 @@
 %token<strVal> TOK_IDENT
 
 /* keywords */
-%token <strVal>
+%token<strVal>
     TOK_CLASS
     TOK_CONSTRUCTOR
     TOK_FUNCTION
@@ -60,7 +60,7 @@
 ;
 
 /* symbols */
-%token <strVal>
+%token<strVal>
     TOK_LBRACE
     TOK_RBRACE
     TOK_LPAREN
@@ -82,145 +82,249 @@
     TOK_TILDE
 ;
 
-//%nterm<strVal> statements statement letStatement ifStatement whileStatement
-
 /* rules */
 %%
 
+class:
+        { xmlOpenTag("class"); }
+    tok_class tok_ident tok_lbrace classVarDec subroutineDec tok_rbrace
+        { xmlCloseTag("class"); }
+;
+
+classType: tok_static | tok_field;
+
+classVarDec:
+    %empty  {}
+
+    | classVarDec   { xmlOpenTag("classVarDec"); }
+    classType type identList tok_semicolon
+                    { xmlCloseTag("classVarDec"); }
+;
+
+identList:
+    tok_ident
+    | tok_ident tok_comma identList
+
+type: tok_int | tok_char | tok_boolean | tok_void | tok_ident;
+
+subroutineType: tok_constructor | tok_function | tok_method;
+
+subroutineDec:
+    %empty  {}
+
+    | subroutineDec { xmlOpenTag("subroutineDec"); }
+    subroutineType type tok_ident tok_lparen parameterList tok_rparen subroutineBody
+                    { xmlCloseTag("subroutineDec"); }
+;
+
+parameterList:
+    %empty
+        {  xmlOpenTag("parameterList"); xmlCloseTag("parameterList"); }
+
+    |   { xmlOpenTag("parameterList"); }
+    params
+        { xmlCloseTag("parameterList"); }
+;
+
+params:
+    type tok_ident
+    | type tok_ident tok_comma params
+;
+
+subroutineBody:
+        { xmlOpenTag("subroutineBody"); }
+    tok_lbrace varDec statements tok_rbrace
+        { xmlCloseTag("subroutineBody"); }
+;
+
+varDec:
+    %empty    {}
+
+    | varDec    { xmlOpenTag("varDec"); }
+    tok_var type identList tok_semicolon
+                { xmlCloseTag("varDec"); }
+;
+
+statementList:
+    statement
+    | statement statementList
+;
+
 statements: 
-    %empty          { }
-    | statements    { xmlOpenTag("statements"); }
-    statement       { xmlCloseTag("statements"); }
+    %empty    { xmlOpenTag("statements"); xmlCloseTag("statements"); }
+
+    |   { xmlOpenTag("statements"); }
+    statementList
+        { xmlCloseTag("statements"); }
 ;
 
 statement:
     letStatement
     | ifStatement
     | whileStatement
+    | doStatement
+    | returnStatement
+;
+
+arrayAccess:
+    %empty  {}
+
+    | tok_lbracket expression tok_rbracket
 ;
 
 letStatement:
         { xmlOpenTag("letStatement"); }
-    let varName equals expression semicolon
+    tok_let tok_ident arrayAccess tok_equals expression tok_semicolon
         { xmlCloseTag("letStatement"); }
+;
+
+elseStatement:
+    %empty  {}
+
+    | tok_else tok_lbrace statements tok_rbrace
 ;
 
 ifStatement:
         { xmlOpenTag("ifStatement"); }
-    if lparen expression rparen
-    lbrace
-        statements
-    rbrace
+    tok_if tok_lparen expression tok_rparen tok_lbrace statements tok_rbrace elseStatement
         { xmlCloseTag("ifStatement"); }
 ;
 
 whileStatement:
         { xmlOpenTag("whileStatement"); }
-    while lparen expression rparen
-    lbrace
-        statements
-    rbrace
+    tok_while tok_lparen expression tok_rparen tok_lbrace statements tok_rbrace
         { xmlCloseTag("whileStatement"); }
+;
+
+doStatement:
+        { xmlOpenTag("doStatement"); }
+    tok_do subroutineCall tok_semicolon
+        { xmlCloseTag("doStatement"); }
+;
+
+returnExpr:
+    %empty  {}
+
+    | expression
+;
+
+returnStatement:
+        { xmlOpenTag("returnStatement"); }
+    tok_return returnExpr tok_semicolon
+        { xmlCloseTag("returnStatement"); }
+;
+
+termList:
+    %empty  {}
+
+    | op term termList
 ;
 
 expression:
         { xmlOpenTag("expression"); }
-    term
-        { xmlCloseTag("expression"); }
-
-    |   { xmlOpenTag("expression"); }
-    term op term
+    term termList
         { xmlCloseTag("expression"); }
 ;
 
 term:
         { xmlOpenTag("term"); }
-    varName
+    tok_integer
         { xmlCloseTag("term"); }
 
     |   { xmlOpenTag("term"); }
-    constant
+    tok_string
+        { xmlCloseTag("term"); }
+
+    |   { xmlOpenTag("term"); }
+    keywordConstant
+        { xmlCloseTag("term"); }
+
+    |   { xmlOpenTag("term"); }
+    tok_ident arrayAccess
+        { xmlCloseTag("term"); }
+
+    |   { xmlOpenTag("term"); }
+    tok_lparen expression tok_rparen
+        { xmlCloseTag("term"); }
+
+    |   { xmlOpenTag("term"); }
+    unaryOp term
+        { xmlCloseTag("term"); }
+
+    |   { xmlOpenTag("term"); }
+    subroutineCall
         { xmlCloseTag("term"); }
 ;
 
-varName:
-        { xmlOpenTag("varName"); }
-    ident
-        { xmlCloseTag("varName"); }
+subroutineCall:
+    tok_ident tok_lparen expressionList tok_rparen
+    | tok_ident tok_dot tok_ident tok_lparen expressionList tok_rparen
 ;
 
-constant:
-    integer
+expressionList:
+    %empty  { xmlOpenTag("expressionList");  xmlCloseTag("expressionList"); }
+
+    |   { xmlOpenTag("expressionList"); }
+    exprs
+        { xmlCloseTag("expressionList"); }
 ;
 
-op:
-        { xmlOpenTag("op"); }
-    plus
-        { xmlCloseTag("op"); }
-
-    |   { xmlOpenTag("op"); }
-    minus
-        { xmlCloseTag("op"); }
-
-    |   { xmlOpenTag("op"); }
-    equals
-        { xmlCloseTag("op"); }
-
-
-    |   { xmlOpenTag("op"); }
-    rangle
-        { xmlCloseTag("op"); }
-
-    |   { xmlOpenTag("op"); }
-    langle
-        { xmlCloseTag("op"); }
+exprs:
+    expression
+    | expression tok_comma exprs
 ;
 
-lbrace:     TOK_LBRACE      { xmlSymbol($1); }
-rbrace:     TOK_RBRACE      { xmlSymbol($1); }
-lparen:     TOK_LPAREN      { xmlSymbol($1); }
-rparen:     TOK_RPAREN      { xmlSymbol($1); }
-lbracket:   TOK_LBRACKET    { xmlSymbol($1); }
-rbracket:   TOK_RBRACKET    { xmlSymbol($1); }
-dot:        TOK_DOT         { xmlSymbol($1); }
-comma:      TOK_COMMA       { xmlSymbol($1); }
-semicolon:  TOK_SEMICOLON   { xmlSymbol($1); }
-plus:       TOK_PLUS        { xmlSymbol($1); }
-minus:      TOK_MINUS       { xmlSymbol($1); }
-asterisk:   TOK_ASTERISK    { xmlSymbol($1); }
-fslash:     TOK_FSLASH      { xmlSymbol($1); }
-ampersand:  TOK_AMPERSAND   { xmlSymbol($1); }
-pipe:       TOK_PIPE        { xmlSymbol($1); }
-langle:     TOK_LANGLE      { xmlSymbol($1); }
-rangle:     TOK_RANGLE      { xmlSymbol($1); }
-equals:     TOK_EQUALS      { xmlSymbol($1); }
-tilde:      TOK_TILDE       { xmlSymbol($1); }
+op: tok_plus | tok_minus | tok_asterisk | tok_fslash | tok_ampersand | tok_pipe | tok_langle | tok_rangle | tok_equals;
 
-class:          TOK_CLASS       { xmlKeyword($1); }
-constructor:    TOK_CONSTRUCTOR { xmlKeyword($1); }
-function:       TOK_FUNCTION    { xmlKeyword($1); }
-method:         TOK_METHOD      { xmlKeyword($1); }
-field:          TOK_FIELD       { xmlKeyword($1); }
-static:         TOK_STATIC      { xmlKeyword($1); }
-var:            TOK_VAR         { xmlKeyword($1); }
-int:            TOK_INT         { xmlKeyword($1); }
-char:           TOK_CHAR        { xmlKeyword($1); }
-boolean:        TOK_BOOLEAN     { xmlKeyword($1); }
-void:           TOK_VOID        { xmlKeyword($1); }
-true:           TOK_TRUE        { xmlKeyword($1); }
-false:          TOK_FALSE       { xmlKeyword($1); }
-null:           TOK_NULL        { xmlKeyword($1); }
-this:           TOK_THIS        { xmlKeyword($1); }
-let:            TOK_LET         { xmlKeyword($1); }
-do:             TOK_DO          { xmlKeyword($1); }
-if:             TOK_IF          { xmlKeyword($1); }
-else:           TOK_ELSE        { xmlKeyword($1); }
-while:          TOK_WHILE       { xmlKeyword($1); }
-return:         TOK_RETURN      { xmlKeyword($1); }
+unaryOp: tok_minus | tok_tilde;
 
-integer:    TOK_INTEGER { xmlInteger($1); }
-string:     TOK_STRING  { xmlString($1); }
-ident:      TOK_IDENT   { xmlIdent($1); }
+keywordConstant: tok_true | tok_false | tok_null | tok_this;
+
+tok_lbrace:     TOK_LBRACE      { xmlSymbol($1); }
+tok_rbrace:     TOK_RBRACE      { xmlSymbol($1); }
+tok_lparen:     TOK_LPAREN      { xmlSymbol($1); }
+tok_rparen:     TOK_RPAREN      { xmlSymbol($1); }
+tok_lbracket:   TOK_LBRACKET    { xmlSymbol($1); }
+tok_rbracket:   TOK_RBRACKET    { xmlSymbol($1); }
+tok_dot:        TOK_DOT         { xmlSymbol($1); }
+tok_comma:      TOK_COMMA       { xmlSymbol($1); }
+tok_semicolon:  TOK_SEMICOLON   { xmlSymbol($1); }
+tok_plus:       TOK_PLUS        { xmlSymbol($1); }
+tok_minus:      TOK_MINUS       { xmlSymbol($1); }
+tok_asterisk:   TOK_ASTERISK    { xmlSymbol($1); }
+tok_fslash:     TOK_FSLASH      { xmlSymbol($1); }
+tok_ampersand:  TOK_AMPERSAND   { xmlSymbol($1); }
+tok_pipe:       TOK_PIPE        { xmlSymbol($1); }
+tok_langle:     TOK_LANGLE      { xmlSymbol($1); }
+tok_rangle:     TOK_RANGLE      { xmlSymbol($1); }
+tok_equals:     TOK_EQUALS      { xmlSymbol($1); }
+tok_tilde:      TOK_TILDE       { xmlSymbol($1); }
+
+tok_class:          TOK_CLASS       { xmlKeyword($1); }
+tok_constructor:    TOK_CONSTRUCTOR { xmlKeyword($1); }
+tok_function:       TOK_FUNCTION    { xmlKeyword($1); }
+tok_method:         TOK_METHOD      { xmlKeyword($1); }
+tok_field:          TOK_FIELD       { xmlKeyword($1); }
+tok_static:         TOK_STATIC      { xmlKeyword($1); }
+tok_var:            TOK_VAR         { xmlKeyword($1); }
+tok_int:            TOK_INT         { xmlKeyword($1); }
+tok_char:           TOK_CHAR        { xmlKeyword($1); }
+tok_boolean:        TOK_BOOLEAN     { xmlKeyword($1); }
+tok_void:           TOK_VOID        { xmlKeyword($1); }
+tok_true:           TOK_TRUE        { xmlKeyword($1); }
+tok_false:          TOK_FALSE       { xmlKeyword($1); }
+tok_null:           TOK_NULL        { xmlKeyword($1); }
+tok_this:           TOK_THIS        { xmlKeyword($1); }
+tok_let:            TOK_LET         { xmlKeyword($1); }
+tok_do:             TOK_DO          { xmlKeyword($1); }
+tok_if:             TOK_IF          { xmlKeyword($1); }
+tok_else:           TOK_ELSE        { xmlKeyword($1); }
+tok_while:          TOK_WHILE       { xmlKeyword($1); }
+tok_return:         TOK_RETURN      { xmlKeyword($1); }
+
+tok_integer:    TOK_INTEGER { xmlInteger($1); }
+tok_string:     TOK_STRING  { xmlString($1); }
+tok_ident:      TOK_IDENT   { xmlIdent($1); }
 
 %%
 
