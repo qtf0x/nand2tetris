@@ -80,9 +80,13 @@ void sym_tbl_free(sym_tbl* tbl) {
     }
 
     for (size_t i = 0; i < TBL_CAP; ++i) {
-        if (tbl->buckets[i]) {
-            free(tbl->buckets[i]->symbol);
-            free(tbl->buckets[i]);
+        /* need to free all nodes in conflict chain */
+        for (bucket* next_bckt = tbl->buckets[i]; next_bckt;) {
+            free(next_bckt->symbol);
+
+            bucket* last_bckt = next_bckt;
+            next_bckt = next_bckt->next;
+            free(last_bckt);
         }
     }
 
@@ -124,8 +128,8 @@ bool sym_tbl_insert(sym_tbl* const tbl, const char* const sym,
     }
 
     /* create the new bucket */
-    bucket* b = (bucket*)malloc(sizeof(bucket));
-    b->symbol = (char*)malloc(strlen(sym) + 1);
+    bucket* b = malloc(sizeof(bucket));
+    b->symbol = malloc(strlen(sym) + 1);
     strcpy(b->symbol, sym);
     b->address = addr;
 

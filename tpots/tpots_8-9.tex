@@ -1,0 +1,63 @@
+\documentclass[12pt]{article}
+
+\usepackage{fancyhdr} % for header/footer control
+
+\begin{document}
+
+\pagenumbering{gobble} % supress page numbers
+
+\pagestyle{fancy}
+\fancyhead{} % clear all header fields
+
+\fancyhead[L]{CSCI 410}
+\fancyhead[C]{TPOTS: Chapters 8 \& 9}
+\fancyhead[R]{Vincent Marias}
+
+Chapter 8 is about feedback systems, in general. Hillis first defines the
+components of such systems (goal, error, feedback), and explains their basic
+mechanism. They use the example of an autopilot system in an airplane to this
+end. We build up from here with proportional control and nested feedback
+systems that can ``learn'' the correct parameters for the next lower-level
+system. This all leads to neural networks, which Hillis describes using the
+basic model of a perceptron. Hillis concludes by briefly describing
+self-organizing neural networks, which don't require training, but rather find
+patterns in the input data on their own.
+
+Chapter 9 is about evolved programs and computers---what Hillis calls
+``thinking machines''. They begin by describing how the human brain works, to
+the best of their knowledge, and how its construction might compare with that
+of a computer system. They argue that the two are fundamentally different,
+since a brain is not created in a structured, strictly hierarchical,
+engineering process. Instead, it's shaped by the process of evolution through
+random mutation (there are other forms of evolution, but Hillis probably isn't
+an evolutionary biologist). They combine this with the earlier ideas about AI
+and thinking machines in the next section, describing a process of creating
+programs through simulated evolution.
+
+\vspace{1em}
+
+These were probably my favorite chapters of the book, as I feel like I actually
+learned quite a bit. Despite taking a course on it (and getting an A), I really
+don't know much about machine learning. The way Hillis explained and motivated
+it from the bottom up was illuminating for me, especially the part about
+perceptrons. I actually feel like I have some understanding of what the neurons
+in a neural network are really doing. I'd really like to learn more about the
+block-recognizing program by Patrick Winston, since it honestly seems
+impossible that something like that could work without a neural network. I was
+also not entirely convinced by Hillis's description of the image-unscrambling
+network. I don't understand how the system will converge, since there doesn't
+seem to be any feedback about what a ``correct'' image will look like.
+
+The last chapter was really cool; I love the comparison of the brain to a
+computer system! It makes sense to me that if we're to create a system
+simulating the human brain, that behavior will have to be an emergent property
+of a complicated system created through a process similar to biological
+evolution. I especially like the idea that we don't necessarily have to
+understand how that system works. This is something that honestly blew me away
+when Hillis described generating sorting algorithms through simulated
+evolution. The fact that they can be proven correct, can be faster than
+engineered algorithms, and yet can't be understood, is absolutely incredible to
+me. To the point where I really don't understand how I haven't heard of this
+before. There must be more applications for this sort of technique, right?
+
+\end{document}

@@ -66,7 +66,7 @@ instruction* parse_instr(const char* const line, const uint16_t line_num) {
 
     regmatch_t* pmatch = NULL;
     size_t nsub = 0;
-    regoff_t off = 0, len = 0;
+    size_t off = 0, len = 0;
 
     /* note that the spec only declares that leading space characters are
      * ignored - I am choosing to also ignore leading and trailing space and tab
@@ -80,12 +80,12 @@ instruction* parse_instr(const char* const line, const uint16_t line_num) {
         }
 
         /* extract value */
-        off = pmatch[1].rm_so;
-        len = pmatch[1].rm_eo - pmatch[1].rm_so;
+        off = (size_t)pmatch[1].rm_so;
+        len = (size_t)(pmatch[1].rm_eo - pmatch[1].rm_so);
         char* str = calloc(len + 1, sizeof(char));
         strncpy(str, line + off, len);
 
-        instr->addr = strtoul(str, NULL, 10);
+        instr->addr = (uint16_t)strtoul(str, NULL, 10);
         free(str);
 
         /* A-instruction with constant address value */
@@ -102,8 +102,8 @@ instruction* parse_instr(const char* const line, const uint16_t line_num) {
         }
 
         /* extract symbol */
-        off = pmatch[1].rm_so;
-        len = pmatch[1].rm_eo - pmatch[1].rm_so;
+        off = (size_t)pmatch[1].rm_so;
+        len = (size_t)(pmatch[1].rm_eo - pmatch[1].rm_so);
         instr->symbol = calloc(len + 1, sizeof(char));
         strncpy(instr->symbol, line + off, len);
 
@@ -125,18 +125,18 @@ instruction* parse_instr(const char* const line, const uint16_t line_num) {
         }
 
         /* extract fields */
-        off = pmatch[2].rm_so;
-        len = pmatch[2].rm_eo - pmatch[2].rm_so;
+        off = (size_t)pmatch[2].rm_so;
+        len = (size_t)(pmatch[2].rm_eo - pmatch[2].rm_so);
         instr->dest = calloc(len + 1, sizeof(char));
         strncpy(instr->dest, line + off, len);
 
-        off = pmatch[3].rm_so;
-        len = pmatch[3].rm_eo - pmatch[3].rm_so;
+        off = (size_t)pmatch[3].rm_so;
+        len = (size_t)(pmatch[3].rm_eo - pmatch[3].rm_so);
         instr->comp = calloc(len + 1, sizeof(char));
         strncpy(instr->comp, line + off, len);
 
-        off = pmatch[5].rm_so;
-        len = pmatch[5].rm_eo - pmatch[5].rm_so;
+        off = (size_t)pmatch[5].rm_so;
+        len = (size_t)(pmatch[5].rm_eo - pmatch[5].rm_so);
         instr->jump = calloc(len + 1, sizeof(char));
         strncpy(instr->jump, line + off, len);
 
@@ -154,8 +154,8 @@ instruction* parse_instr(const char* const line, const uint16_t line_num) {
         }
 
         /* extract symbol */
-        off = pmatch[1].rm_so;
-        len = pmatch[1].rm_eo - pmatch[1].rm_so;
+        off = (size_t)pmatch[1].rm_so;
+        len = (size_t)(pmatch[1].rm_eo - pmatch[1].rm_so);
         instr->symbol = calloc(len + 1, sizeof(char));
         strncpy(instr->symbol, line + off, len);
 
@@ -193,9 +193,12 @@ bool resolve_reference(instruction* const instr, sym_tbl* const tbl,
 
     /* note we're deciding to use a different alternative in the union */
     if (sym_tbl_insert(tbl, instr->symbol, *nvars)) {
+        free(instr->symbol);
         instr->addr = (*nvars)++;
     } else {
-        instr->addr = sym_tbl_lookup(tbl, instr->symbol);
+        uint16_t addr = sym_tbl_lookup(tbl, instr->symbol);
+        free(instr->symbol);
+        instr->addr = addr;
     }
 
     return (instr->resolved = true);

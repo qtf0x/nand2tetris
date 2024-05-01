@@ -45,10 +45,16 @@ int main(int argc, char** argv) {
     regoff_t name_off = 0, name_len = 0;
     regoff_t ext_off = 0, ext_len = 0;
 
-    if ((pmatch = match_regex(argv[1], "^(.*/)([^/\\]*)\\.(.*)$", &nsub))) {
+    if ((pmatch = match_regex(argv[1], "^(.*/)?([^/\\]*)\\.(.*)$", &nsub))) {
         /* extract filepath without extension */
-        path_no_ext_off = pmatch[1].rm_so;
-        path_no_ext_len = pmatch[2].rm_eo - pmatch[1].rm_so;
+        if (pmatch[1].rm_so < 0) {
+            /* match empty path prefix */
+            path_no_ext_off = pmatch[2].rm_so;
+            path_no_ext_len = pmatch[2].rm_eo - pmatch[2].rm_so;
+        } else {
+            path_no_ext_off = pmatch[1].rm_so;
+            path_no_ext_len = pmatch[2].rm_eo - pmatch[1].rm_so;
+        }
 
         /* extract filename without extension */
         name_off = pmatch[2].rm_so;
@@ -62,11 +68,14 @@ int main(int argc, char** argv) {
         free(pmatch);
         pmatch = NULL;
     } else {
+        fprintf(stderr,
+                "[ERROR] Input filepath \"%s\" invalid - check you spelling!\n",
+                argv[1]);
         return EXIT_FAILURE;
     }
 
     /* validate file extension as .asm */
-    if (strncmp(argv[1] + ext_off, "asm", ext_len)) {
+    if (strncmp(argv[1] + ext_off, "asm", (size_t)ext_len)) {
         fprintf(stderr,
                 "[ERROR] File extension \"%.*s\" invalid - use <path to "
                 "file>.asm\n",
@@ -113,6 +122,8 @@ int main(int argc, char** argv) {
         if (instr->type == L_INSTR) {
             /* update symbol table */
             sym_tbl_insert(tbl, instr->symbol, pc);
+            free(instr->symbol);
+            free(instr);
         } else if (instr->type == A_INSTR || instr->type == C_INSTR) {
             if (!first_instr) {
                 first_instr = instr;
@@ -125,6 +136,8 @@ int main(int argc, char** argv) {
             curr_instr = instr;
 
             ++pc; /* only count instructions that generate code */
+        } else {
+            free(instr);
         }
     }
 
@@ -145,8 +158,8 @@ int main(int argc, char** argv) {
 
     /* output filepath is same as input w/ extension changed to .hack */
     char* filename_out =
-        calloc(path_no_ext_len + strlen(OUT_EXT), sizeof(char));
-    strncpy(filename_out, argv[1] + path_no_ext_off, path_no_ext_len);
+        calloc((size_t)path_no_ext_len + strlen(OUT_EXT) + 1, sizeof(char));
+    strncpy(filename_out, argv[1] + path_no_ext_off, (size_t)path_no_ext_len);
     strcat(filename_out, OUT_EXT);
 
     FILE* fout = fopen(filename_out, "w");
@@ -160,7 +173,7 @@ int main(int argc, char** argv) {
     free(filename_out);
     filename_out = NULL;
 
-    for (instruction* instr = first_instr; instr; instr = instr->next) {
+    for (instruction* instr = first_instr; instr;) {
         /* if symbol needs to be resolved, attempt to resolve to an address */
         if ((instr->type == A_INSTR || instr->type == L_INSTR) &&
             !instr->resolved && !resolve_reference(instr, tbl, &nvars)) {
@@ -185,6 +198,10 @@ int main(int argc, char** argv) {
             memcpy(instr_bits + 3, translate_comp(instr->comp), 7);
             memcpy(instr_bits + 10, translate_dest(instr->dest), 3);
             memcpy(instr_bits + 13, translate_jump(instr->jump), 3);
+
+            free(instr->comp);
+            free(instr->dest);
+            free(instr->jump);
         } else {
             /* L-instructions and comments/blank lines don't generate code */
             continue;
@@ -192,6 +209,10 @@ int main(int argc, char** argv) {
 
         fwrite(instr_bits, sizeof(char), 16, fout);
         fwrite("\n", sizeof(char), 1, fout);
+
+        instruction* last_instr = instr;
+        instr = instr->next;
+        free(last_instr);
     }
 
     fclose(fout);

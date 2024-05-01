@@ -1,6 +1,13 @@
 1. Vincent Marias
 
 2. I read the relevant sections of the textbook for about an hour, spent maybe
-another three on the actual project.
+another 8 on the actual project.
 
-3.
+3. Well, I fixed all the memory errors from the first version. Sorry about
+that; I tested on my own machines as well as Isengard and Alamode, but none of
+them ever actually showed any signs that something was wrong. Anyway, fun
+project! I'll be digging into the source code for the textbook authors'
+implementation, because I am baffled at how theirs is 5-7x times faster (on my
+machine) than mine, even though theirs is written in Java and mine in C
+(obviously I know that's not all there is to program speed, I just thought it
+was interesting).
