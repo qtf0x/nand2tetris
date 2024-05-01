@@ -14,5 +14,5 @@ about grammars or language theory could get very lost doing this project, I
 think (not that it's all that difficult, but the grammar is just weird and the
 specification for it is lazy).
 
-4. This project depends on recent versions of clang(1), flex(1), and bison(1).
-Build on Linux using make(1).
+4. This project depends on clang(1) 5+, flex(1) 2.6+, and bison(1) 3.8+. Build
+on Linux using GNU make(1).

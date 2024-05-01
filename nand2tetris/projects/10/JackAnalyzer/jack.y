@@ -354,18 +354,18 @@ void parseFile(std::filesystem::path inPath) {
     std::filesystem::path outExt{".xml"};
 
     /* set input stream */
-    std::cout << "Opening " << s << " for input...\n";
+    //std::cout << "Opening " << s << " for input...\n";
     FILE* inFile = fopen(s, "r");
     lexrestart(inFile);
 
     /* set output stream */
     std::filesystem::path outPath = inPath;
     outPath.replace_extension(outExt);
-    std::cout << "Opening " << outPath << " for output...\n";
+    //std::cout << "Opening " << outPath << " for output...\n";
     out.reset(new std::ofstream(outPath));
 
     /* do the parse */
-    std::cout << "Parsing...\n\n";
+    //std::cout << "Parsing...\n\n";
     yyparse();
 
     fclose(inFile);
